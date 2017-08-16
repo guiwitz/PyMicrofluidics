@@ -414,7 +414,7 @@ def number_array(scale, num, space, space_series, num_series, origin, subsamplin
             xpos = origin[0]+j*space+i*(space*num+space_series)
             if np.mod(j,subsampling) ==0:
                 #cur_num = numbering(j,scale,[xpos,origin[1]])
-                cur_num = numbering(j, scale, [xpos,origin[1]], topo_invert,rotation)
+                cur_num = numbering(j, scale, [xpos,origin[1]],rotation)
                 for x in cur_num['numbers']:
                     all_numbers['numbers'].append(x)
                 for x in cur_num['envelopes']:
@@ -445,10 +445,10 @@ def patterned_region(global_shape,channel_width,channel_separation):
     """
         
 
-    minx = np.min(clip[:,0])
-    maxx = np.max(clip[:,0])
-    miny = np.min(clip[:,1])
-    maxy = np.max(clip[:,1])
+    minx = np.min(global_shape[:,0])
+    maxx = np.max(global_shape[:,0])
+    miny = np.min(global_shape[:,1])
+    maxy = np.max(global_shape[:,1])
     
     clip = Polygon([tuple(z) for z in global_shape])
 

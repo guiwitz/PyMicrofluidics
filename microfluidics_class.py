@@ -152,9 +152,9 @@ class Feature:
     
     #design = None
     
-    def __init__(self, layer='None',mirror='None'):
+    def __init__(self, coord = None, layer=None, mirror=None):
         
-        self.coord = None
+        self.coord = coord
         self.layer = layer
         self.mirror = mirror
 
@@ -241,7 +241,7 @@ class Feature:
 
     
     @classmethod   
-    def serpentine(cls, nbseg, dist, rad, length, curvature, origin, left_right,bottom_top, hor_vert):
+    def serpentine(cls, nbseg, dist, rad, length, curvature, origin, orientation, left_right, bottom_top, prune_first=0, prune_last=0):
         """
         Generates a serpentine feature
 
@@ -260,11 +260,16 @@ class Feature:
             Curvature of turns
         origin: 2D list
             Position of the "start" of the serpentine
+        orientation : serpentine is 'horizontal' or 'vertical'
         left_right : str
             serpentine starts 'left' or 'right'
         bottom_top : str
             serpentine starts 'top' or 'bottom'
-        hor_vert : serpentine is 'horizontal' or 'vertical'
+        prune_first : float (optionnal)
+            cut a given fraction of the first segment
+        prune_last : float (optionnal)
+            cut a given fraction of the last segment
+
 
         Returns
         -------
@@ -295,10 +300,28 @@ class Feature:
                 serp = np.append(serp, [serp_init1+x*toadd],axis=0)
         serp = serp[1::,:]
 
+        # prune first and last
+        if not 0 <= prune_first <= 1:
+            raise ValueError('prune_first must be between 0 and 1.')
+        if not 0 <= prune_last <= 1:
+            raise ValueError('prune_last must be between 0 and 1.')        
+
+        if prune_first>0 and left_right=='left':
+            serp[0] = [serp[1][0]*prune_first, serp[1][1]] 
+        if prune_first>0 and left_right=='right':
+            serp[0] = [serp[0][0]*(1-prune_first), serp[0][1]] 
+        if prune_last>0 and (left_right=='left' and np.mod(nbseg,2)==0 or 
+                                 left_right=='right' and np.mod(nbseg,2)==1):
+            serp[-1] = [serp[-2][0]*prune_last, serp[-1][1]] 
+        if prune_last>0 and (left_right=='left' and np.mod(nbseg,2)==1 or 
+                                 left_right=='right' and np.mod(nbseg,2)==0):
+            serp[-1] = [serp[-1][0]*(1-prune_last), serp[-1][1]] 
+
+        # rotate it to match orientation and direction
         if (left_right == 'right'):
             serp[:,0] = serp[:,0]-length
 
-        if hor_vert == 'vertical':
+        if orientation == 'vertical':
             if (left_right == 'left') and (bottom_top == 'bottom'):
                 serp = np.fliplr(serp)
             elif(left_right == 'right') and (bottom_top == 'top'):

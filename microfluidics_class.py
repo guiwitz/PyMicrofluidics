@@ -16,8 +16,7 @@ class Design:
         self.layers = {}
         self.file = None
         #Feature.design = self
-    
-    
+        
     def add_layer(self, layer_name, layer):
         self.layers[layer_name] = layer
         
@@ -157,6 +156,18 @@ class Feature:
         self.coord = coord
         self.layer = layer
         self.mirror = mirror
+        
+    def __add__(self, other):
+        sum_feature = copy.deepcopy(self)
+        sum_feature.coord = sum_feature.coord+other.coord
+        return sum_feature
+    
+    def __radd__(self, other):
+        if other == 0:
+            return self
+        else:
+            return self.__add__(other)
+        
 
     def set_layer(self,layer_name):
         

@@ -431,7 +431,7 @@ def patterned_region(global_shape,channel_width,channel_separation):
 
     Parameters
     ----------
-    global_shape : 2D numpy array 
+    global_shape : 2D array 
         Shape to use of clipping the grid
     channel_width : float
         WIdths of the channels
@@ -444,7 +444,7 @@ def patterned_region(global_shape,channel_width,channel_separation):
 
     """
         
-
+    global_shape = np.array(global_shape)
     minx = np.min(global_shape[:,0])
     maxx = np.max(global_shape[:,0])
     miny = np.min(global_shape[:,1])

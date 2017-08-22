@@ -408,18 +408,18 @@ def number_array(scale, num, space, space_series, num_series, origin, subsamplin
     """
     all_numbers = {}
     all_numbers['numbers'] = []
-    all_numbers['envelopes'] = []
+    #all_numbers['envelopes'] = []
     for i in range(num_series):
         for j in range(num):
             xpos = origin[0]+j*space+i*(space*num+space_series)
             if np.mod(j,subsampling) ==0:
                 #cur_num = numbering(j,scale,[xpos,origin[1]])
                 cur_num = numbering(j, scale, [xpos,origin[1]],rotation)
-                for x in cur_num['numbers']:
+                for x in cur_num:#['numbers']:
                     all_numbers['numbers'].append(x)
-                for x in cur_num['envelopes']:
-                    all_numbers['envelopes'].append(x)
-    return all_numbers
+                #for x in cur_num['envelopes']:
+                #    all_numbers['envelopes'].append(x)
+    return all_numbers['numbers']
             
 
 def patterned_region(global_shape,channel_width,channel_separation):
@@ -718,7 +718,7 @@ def numbering(num, scale, pos, rotation=0):
         num_result['envelopes'][x] = np.array([z+ np.array(pos) for z in num_result['envelopes'][x]])
     
     
-    return num_result
+    return num_result['numbers']
 
 
 def has_hole(feature):

@@ -152,11 +152,11 @@ class Feature:
     
     #design = None
     
-    def __init__(self):
+    def __init__(self, layer='None',mirror='None'):
         
         self.coord = None
-        self.layer = None
-        self.mirror = None
+        self.layer = layer
+        self.mirror = mirror
 
     def set_layer(self,layer_name):
         
@@ -781,17 +781,77 @@ class Feature:
         return mirrored
     
     def feature_len(self):
+        """
+        Returns the number of parts composing a feature.
+
+        Parameters
+        ----------
+        
+        Returns
+        -------
+        int
+            number of parts within a feature
+
+        """
         return len(self.coord)
     
     def copy(self):
+        """
+        Returns a copy of a feature.
+        
+        This makes a deep copy to ensure features are trully independent.
+
+        Parameters
+        ----------
+        
+        Returns
+        -------
+        feature
+            copied feature
+
+        """
         return copy.deepcopy(self)
     
     def move(self,move):
+        """
+        Moves a feature.
+        
+        Adds to each coordinate of a feature the displacement given by the parameter move.
+
+        Parameters
+        ----------
+        
+        move: 2-element list
+            displacement to add to a feature
+        
+        Returns
+        -------
+        feature
+            feature moved by the displacement move
+
+        """
         for x in range(len(self.coord)):
             self.coord[x] = np.array([y+np.array(move) for y in self.coord[x]])
         return self    
     
     def combine_features(feature1, feature2):
+        """
+        Combined two features into single feature
+        
+        Creates a new feature by aggregating all the parts of two features into a single feature.
+
+        Parameters
+        ----------
+        
+        feature1: feature
+        featzre2: feature
+        
+        Returns
+        -------
+        feature
+            new feature aggregating two input features
+
+        """
         new_feature = Feature()
         new_feature.coord = feature1.coord.copy()
         for x in feature2.coord:
@@ -801,9 +861,9 @@ class Feature:
 
     def reverse_feature(feature, back_square):
         """
-        Reverses a number array from polygons to hole within a rectangle.
+        Reverses a feature from polygons to hole within a rectangle.
 
-        Transforms each polygon of a number array into a hole within a given rectangle. Of course the numbers and 
+        Transforms each polygon of a feature into a hole within a given rectangle. Of course the features and 
         the rectangle have to be overlapping for holes to be created.
 
         Parameters
@@ -858,15 +918,13 @@ class Feature:
     
 def has_hole(feature):
     """
-    Detects holes in features
-
-    Takes a feature (2D numpy array or list of 2D numpy array) and returns the number of holes of the feature
+    Detects the number of holes in a shapely polygon or multipolygon.
 
     Parameters
     ----------
-    feature : feature
-        feature
-
+    feature : shapely Polygon or Multipolygon
+        polygon to be analyzed for holes
+            
     Returns
     -------
     int

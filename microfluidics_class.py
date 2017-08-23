@@ -4,6 +4,7 @@ from dxfwrite import DXFEngine as dxf
 
 from shapely.geometry import Polygon
 from shapely.geometry import MultiPolygon
+from shapely.geometry import LineString
 from shapely import ops
 
 import copy
@@ -182,6 +183,27 @@ class Feature:
         
         self.mirror = ax
         return self
+    
+    @classmethod    
+    def define_polygon(cls, polygon):
+        """
+        Generates a polygon feature
+
+        Parameters
+        ----------
+        polygon : 2D list 
+            polygon to be defined as feature
+
+        Returns
+        -------
+        feature
+            polygon feature
+
+        """
+        
+        num_obj = cls()
+        num_obj.coord = [np.array(polygon)]
+        return num_obj
         
     @classmethod    
     def define_tube(cls, points,curvature, rad):
@@ -206,11 +228,18 @@ class Feature:
 
         """
         points = np.array(points)
+        
+        
         complete = np.array([points[0,:]])
         for i in range(1,len(curvature)):
             if curvature[i] != 0:
                 vec1 = (points[i+1,:]-points[i,:])/np.linalg.norm(points[i+1,:]-points[i,:])
                 vec2 = (points[i-1,:]-points[i,:])/np.linalg.norm(points[i-1,:]-points[i,:])
+                
+                if vec1[0]*vec2[1]-vec1[1]*vec2[0] == 0:
+                    complete = np.append(complete,[points[i,:]],axis=0)
+                    continue
+                
                 bis = (vec1+vec2)/np.linalg.norm(vec1+vec2)
 
                 gamma = np.arccos(np.dot(vec1,vec2))/2
@@ -253,6 +282,44 @@ class Feature:
         tube_obj.coord = [tube]
         return tube_obj
 
+    
+    @classmethod    
+    def define_tube_broken(cls, points,curvature, rad, dotlen):
+        """
+        Generates polygon coordinates of a tube
+
+        The tube goes along points, has a radius rad and each "turn" has a curvature.
+
+        Parameters
+        ----------
+        points : 2D list 
+            Tube path
+        curvature : 2D list
+            Tube curvature at each coordinate. First and last point must be 0
+        rad : float
+            Tube radius
+
+        Returns
+        -------
+        2D numpy array
+            Coordinates of polygon representing the tube
+
+        """
+        points = np.array(points)
+        totlen = np.sum(np.linalg.norm(np.diff(np.array(points),axis=0), axis=1))
+        interpol_points = np.array([np.array(LineString(tuple(points)).interpolate(x).coords).squeeze() for x in np.arange(0,totlen,dotlen/2)]).squeeze()
+        
+        broken_lines = [interpol_points[x:x+3] for x in range(0,interpol_points.shape[0]-4,4)]
+        #print([x for x in broken_lines])
+        broken_lines_feature = []
+        #for x in broken_lines:
+        #    broken_lines_feature.append(Feature.define_tube(x, [0,curvature,0], rad))
+        #broken_lines_feature = sum(broken_lines_feature)
+        
+        broken_lines_feature = sum([Feature.define_tube(x, [0,curvature,0], rad) for x in broken_lines])
+        return broken_lines_feature
+
+    
     
     @classmethod   
     def serpentine(cls, nbseg, dist, rad, length, curvature, origin, orientation, left_right, bottom_top, prune_first=0, prune_last=0):
@@ -459,7 +526,7 @@ class Feature:
         return ch_array_obj
 
     @classmethod
-    def numbering(cls, num, scale, pos, rotation=0):
+    def numbering(cls, num, scale, pos, rotation=0, space_factor=1.2):
         """
         Creates a "polygon-number" in the form of a feature.
 
@@ -490,17 +557,17 @@ class Feature:
         #define all the numbers as paths. Some of them cannot be traced as a single path and thus
         #are composed of several paths 
         numbers[1] = [[[0,-0.5],[0,0.5]]]
-        numbers[2] = [[[0.5,-0.5],[-0.5,-0.5],[-0.5,0],[0.5,0.0],[0.5,0.5],[-0.5,0.5]]]
-        numbers[3] = [[[-0.5,-0.5],[0.5,-0.5],[0.5,0.5],[-0.5,0.5]],[[-0.5,0],[0.5,0]]]
-        numbers[4] = [[[0.5,-0.5],[0.5,0.5]],[[0.5,0],[-0.5,0],[-0.5,0.5]]]
-        numbers[5] = [[[-0.5,-0.5],[0.5,-0.5],[0.5,0],[-0.5,0],[-0.5,0.5],[0.5,0.5]]]
-        numbers[6] = [[[0.5,0.5],[-0.5,0.5],[-0.5,-0.5],[0.5,-0.5],[0.5,0],[-0.5,0]]]
-        numbers[7] = [[[-0.5,0.5],[0.5,0.5],[0.5,-0.5]]]
-        numbers[8] = [[[0.0,-0.5],[0.5,-0.5],[0.5,0],[-0.5,0],[-0.5,-0.5],[0.05,-0.5]],
-                                [[0,0],[0.5,0],[0.5,0.5],[-0.5,0.5],[-0.5,0],[0.05,0]]]
-        numbers[9] = [[[-0.5,-0.5],[0.5,-0.5],[0.5,0.5],[-0.5,0.5],[-0.5,0],[0.5,0]]]
-        numbers[0] = [[[0,-0.5],[0.5,-0.5],[0.5,0.5],[-0.5,0.5],[-0.5,-0.5],[0.05,-0.5]]]
-        numbers['dot'] = [[[-0.05,-0.05],[0.05,-0.05],[0.05,0.05],[-0.05,0.05]]]
+        numbers[2] = [[[0.35,-0.5],[-0.35,-0.5],[-0.35,0],[0.35,0.0],[0.35,0.5],[-0.35,0.5]]]
+        numbers[3] = [[[-0.35,-0.5],[0.35,-0.5],[0.35,0.5],[-0.35,0.5]],[[-0.35,0],[0.35,0]]]
+        numbers[4] = [[[0.35,-0.5],[0.35,0.5]],[[0.35,0],[-0.35,0],[-0.35,0.5]]]
+        numbers[5] = [[[-0.35,-0.5],[0.35,-0.5],[0.35,0],[-0.35,0],[-0.35,0.5],[0.35,0.5]]]
+        numbers[6] = [[[0.35,0.5],[-0.35,0.5],[-0.35,-0.5],[0.35,-0.5],[0.35,0],[-0.35,0]]]
+        numbers[7] = [[[-0.35,0.5],[0.35,0.5],[0.35,-0.5]]]
+        numbers[8] = [[[0.0,-0.5],[0.35,-0.5],[0.35,0],[-0.35,0],[-0.35,-0.5],[0.05,-0.5]],
+                                [[0,0],[0.35,0],[0.35,0.5],[-0.35,0.5],[-0.35,0],[0.05,0]]]
+        numbers[9] = [[[-0.35,-0.5],[0.35,-0.5],[0.35,0.5],[-0.35,0.5],[-0.35,0],[0.35,0]]]
+        numbers[0] = [[[0,-0.5],[0.35,-0.5],[0.35,0.5],[-0.35,0.5],[-0.35,-0.5],[0.05,-0.5]]]
+        numbers['dot'] = [[[-0.0005,-0.0005],[0.0005,-0.0005],[0.0005,0.0005],[-0.0005,0.0005]]]
 
         rad = 0.1
         for x in numbers:
@@ -552,16 +619,16 @@ class Feature:
             len_num = len_num-1
 
         if len_num==1:
-            count = np.array([-scale*1.5,0])
+            count = np.array([-scale*space_factor,0])
         else:
-            count = np.array([-scale*((len_num+1)*1.5)/2,0])
+            count = np.array([-scale*((len_num+1)*space_factor)/2,0])
         for x in num:
             if x=='.':
                 for y in numbers_rad['dot']:
-                    y = np.array([k+count+scale*np.array([0.75,-0.4]) for k in y])
+                    y = np.array([k+count+scale*np.array([space_factor/2,-0.4]) for k in y])
                     full_num.append(y)
             else:
-                count = count + np.array([scale*1.5,0])
+                count = count + np.array([scale*space_factor,0])
                 for y in numbers_rad[int(x)]:
                     y = np.array([z + count for z in y])
                     full_num.append(y)
@@ -585,7 +652,7 @@ class Feature:
         return num_obj
 
     @classmethod
-    def number_array(cls, scale, num, space, space_series, num_series, origin, subsampling, rotation = 0):
+    def number_array(cls, scale, num, space, space_series, num_series, origin, subsampling, rotation = 0, values=None):
         """
         Generates a number array feature
 
@@ -617,13 +684,17 @@ class Feature:
             List of 2d numpy arrays specifying the coordinates of each number
 
         """
+        if values is None:
+            nums = range(num)
+        else:
+            nums = [values[i%len(values)] for i in range(num)]               
+        
         all_numbers = []
         for i in range(num_series):
             for j in range(num):
                 xpos = origin[0]+j*space+i*(space*num+space_series)
                 if np.mod(j,subsampling) ==0:
-                    #cur_num = numbering(j,scale,[xpos,origin[1]])
-                    cur_num = Feature.numbering(j, scale, [xpos,origin[1]],rotation).coord
+                    cur_num = Feature.numbering(nums[j], scale, [xpos,origin[1]],rotation).coord
                     for x in cur_num:
                         all_numbers.append(x)
         all_numbers_obj = cls()

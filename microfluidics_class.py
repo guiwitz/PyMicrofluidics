@@ -22,7 +22,10 @@ class Design:
         
     def add_feature(self, name, feature):
         self.features[name] = feature
-    
+        
+        if not feature.mirror == None:
+            self.features[name+'_mirror'] = feature.flip_feature(feature.mirror)
+                
     def get_coord(self,name):
         return self.features[name].coord
     
@@ -39,6 +42,7 @@ class Design:
             original = copy.deepcopy(self)
             original.set_design_origin(p)
             for f in original.features:
+                original.features[f].mirror = None
                 complete_design.add_feature(f+str(counter),original.features[f])
             counter  = counter +1
         return complete_design
@@ -136,9 +140,8 @@ class Design:
         for x in self.features:
             #self.add_closed_polyline(self.features[x].layer,self.features[x].coord,drawing)
             self.add_closed_polyline(self.layers[self.features[x].layer],self.features[x].coord,drawing)        
-            if not self.features[x].mirror == None:
-                #self.add_closed_polyline(self.features[x].layer,self.features[x].flip_feature(self.features[x].mirror).coord,drawing)
-                self.add_closed_polyline(self.layers[self.features[x].layer],self.features[x].flip_feature(self.features[x].mirror).coord,drawing)
+            #if not self.features[x].mirror == None:
+                #self.add_closed_polyline(self.layers[self.features[x].layer],self.features[x].flip_feature(self.features[x].mirror).coord,drawing)
         self.drawing = drawing
         #return drawing
         
@@ -796,8 +799,6 @@ class Feature:
 
         Parameters
         ----------
-        feature : 2D numpy array or list of 2D numpy array
-            Design feature
         ax : float
             vertical position of the horizontal axis
 

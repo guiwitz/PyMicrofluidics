@@ -38,6 +38,23 @@ class Design:
         else:
             return self.__add__(other)
         
+    def copy(self):
+        """
+        Returns a copy of a design.
+        
+        This makes a deep copy to ensure designs are trully independent.
+
+        Parameters
+        ----------
+        
+        Returns
+        -------
+        design
+            copied design
+
+        """
+        return copy.deepcopy(self)
+        
         
     def add_layer(self, layer_name, layer):
         self.layers[layer_name] = layer
@@ -55,18 +72,20 @@ class Design:
         self.features[name].coord[item] = np.array([x+np.array(toadd) for x in self.features[name].coord[item]])
         
     def multiplicate(self, positions):
-        complete_design = Design()
-        complete_design.layers = self.layers
-        complete_design.file = self.file
+        #complete_design = Design()
+        #complete_design.layers = self.layers
+        #complete_design.file = self.file
         
-        counter = 0
-        for p in positions:
-            original = copy.deepcopy(self)
-            original.set_design_origin(p)
-            for f in original.features:
-                original.features[f].mirror = None
-                complete_design.add_feature(f+str(counter),original.features[f])
-            counter  = counter +1
+        complete_design = sum([self.copy().set_design_origin(p) for p in positions])
+        
+        #for p in positions:
+        #    original = copy.deepcopy(self)
+        #    original.set_design_origin(p)
+        #    complete_design = complete_design + self.copy().set_design_origin(p)
+            #for f in original.features:
+            #    original.features[f].mirror = None
+            #    complete_design.add_feature(f+str(counter),original.features[f])
+            #counter  = counter +1
         return complete_design
                 
                 
@@ -94,6 +113,8 @@ class Design:
         for d in self.features:
             for i in range(len(self.get_coord(d))):
                 self.add_to_coord(d,i,origin)
+        return self
+    
 
     def add_closed_polyline(self, layer_to_use,poly,drawing):
         """

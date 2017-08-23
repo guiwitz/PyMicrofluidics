@@ -294,15 +294,16 @@ class Feature:
         ----------
         points : 2D list 
             Tube path
-        curvature : 2D list
-            Tube curvature at each coordinate. First and last point must be 0
+        curvature : float
+            Tube curvature for each segment
         rad : float
             Tube radius
+        dotlen : length of broken line segments
 
         Returns
         -------
         2D numpy array
-            Coordinates of polygon representing the tube
+            Coordinates of polygon representing the broken line tube
 
         """
         points = np.array(points)

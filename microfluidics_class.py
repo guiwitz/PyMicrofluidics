@@ -18,6 +18,27 @@ class Design:
         self.file = None
         #Feature.design = self
         
+    
+    def __add__(self, other):
+        sum_design = copy.deepcopy(self)
+        for f in other.features:
+            new_name = f
+            suffix = 0
+            while new_name in sum_design.features.keys():
+                new_name = new_name+str(suffix)
+                suffix = suffix+1
+            sum_design.features[new_name] = other.features[f]
+        return sum_design
+                
+        
+        
+    def __radd__(self, other):
+        if other == 0:
+            return self
+        else:
+            return self.__add__(other)
+        
+        
     def add_layer(self, layer_name, layer):
         self.layers[layer_name] = layer
         

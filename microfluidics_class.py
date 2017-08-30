@@ -283,8 +283,19 @@ class Feature:
                     continue
                 
                 bis = (vec1+vec2)/np.linalg.norm(vec1+vec2)
-
-                gamma = np.arccos(np.dot(vec1,vec2))/2
+                
+                crossprod = np.dot(vec1,vec2)
+                if crossprod<-1:
+                    crossprod = -1
+                gamma = np.arccos(crossprod)/2
+                #try:
+                #    gamma = np.arccos(crossprod)/2
+                #except RuntimeWarning:
+                #    gamma = np.pi/2
+                
+                #if np.isnan(gamma):
+                #    gamma = np.pi/2
+                
                 D = curvature[i]*np.tan(np.pi/2-gamma)
                 D2 = np.sqrt(curvature[i]**2+D**2)
                 alpha2 = np.pi/2-gamma
@@ -298,11 +309,16 @@ class Feature:
                     angles = np.arange(-alpha2,alpha2,0.1)
                 else:
                     angles = np.arange(alpha2,-alpha2,-0.1)
+                if angles.shape[0]==0:
+                    angles = np.array([0])
 
                 center = points[i,:]+D2*bis
 
                 vect = -curvature[i]*bis
                 arc = np.squeeze([center+np.dot(vect,np.array([[np.cos(x),-np.sin(x)],[np.sin(x),np.cos(x)]])) for x in angles])
+                
+                if len(arc.shape)==1:
+                    arc = np.array([arc])
                 complete = np.append(complete,arc,axis=0)
             else:
                 complete = np.append(complete,[points[i,:]],axis=0)
@@ -1085,3 +1101,5 @@ def has_hole(feature):
     elif feature.geom_type == 'MultiPolygon':
         num_holes = np.sum([len(x.interiors) for x in feature])
     return num_holes
+
+

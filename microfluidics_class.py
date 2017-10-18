@@ -401,7 +401,10 @@ class Feature:
             #combined space occupied on a given segment by its two neighboring curved regions
             sum_dist1 = distances[i]+distances[i+1]
             #ratio of vector length and combined occupied region
-            all_fact=np.append(all_fact,np.array([[i,(vecnorms[i]/sum_dist1)]]),axis=0)
+            if sum_dist1>0:
+                all_fact=np.append(all_fact,np.array([[i,(vecnorms[i]/sum_dist1)]]),axis=0)
+            else:
+                all_fact=np.append(all_fact,np.array([[i,2]]),axis=0)
         #sort the ratios from smallest (way to much space occupied by cureved region) to largest 
         order = all_fact[all_fact[:, 1].argsort()][:,0]
         #if any curved regions take too much space, reduce them by the calculated factor and rerun the 

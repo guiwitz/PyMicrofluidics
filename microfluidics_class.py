@@ -9,6 +9,8 @@ from shapely import ops
 
 import copy
 import re
+import warnings
+
 
 def get_hershey():
     hershey_path='/Users/guillaume/Google Drive/PostdocBasel/PyMicrofluidics/hershey.txt'
@@ -372,8 +374,39 @@ class Feature:
 
         """
         points = np.array(points)
+        curvature = np.array(curvature)
+        #verify that curvatures are zero at both ends and that curvature is not larger than
+        #the tube radius
+        if curvature[0] !=0:
+            curvature[0] = 0
+            warnings.warn('Initial curvature was not 0')
+        if curvature[-1] !=0:
+            curvature[-1] = 0
+            warnings.warn('Last curvature was not 0')
         
+        #verify that the chosen curvature are not too large to be accommodated on the segments
+        distances, vecnorms = Feature.check_curvatures(points,rad,curvature)
+        all_fact = np.empty((0,2))
+        for i in range(points.shape[0]-1):
+            sum_dist1 = distances[i]+distances[i+1]
+            all_fact=np.append(all_fact,np.array([[i,(vecnorms[i]/sum_dist1)]]),axis=0)
+        order = all_fact[all_fact[:, 1].argsort()][:,0]
+        if np.any(all_fact[:,1]<1):
+            warnings.warn('Some curvatures are too large to be accommodated on the given segment lenghts and will be reduced')
+            for i in order:#range(points.shape[0]-1):
+                i=int(i)
+                sum_dist1 = distances[i]+distances[i+1]
+                if sum_dist1>vecnorms[i]:
+                    print(vecnorms[i]/sum_dist1)
+                    factor = 0.9*(vecnorms[i]/sum_dist1)
+                    curvature[i]=factor*curvature[i]
+                    curvature[i+1]=factor*curvature[i+1]
+                    distances, vecnorms = Feature.check_curvatures(points,rad,curvature)
         
+        if np.any(0.9*curvature[curvature>0]<rad):
+            warnings.warn('Tube radius cannot be larger than curvature. Forcing smaller radius')
+            rad = 0.9*np.min(curvature[curvature>0])
+            
         complete = np.array([points[0,:]])
         for i in range(1,len(curvature)):
             if curvature[i] != 0:
@@ -390,16 +423,8 @@ class Feature:
                 if crossprod<-1:
                     crossprod = -1
                 gamma = np.arccos(crossprod)/2
-                #try:
-                #    gamma = np.arccos(crossprod)/2
-                #except RuntimeWarning:
-                #    gamma = np.pi/2
                 
-                #if np.isnan(gamma):
-                #    gamma = np.pi/2
-                
-                D = curvature[i]*np.tan(np.pi/2-gamma)
-                D2 = np.sqrt(curvature[i]**2+D**2)
+                D2 = curvature[i]/np.sin(gamma)
                 alpha2 = np.pi/2-gamma
 
 
@@ -442,6 +467,37 @@ class Feature:
         tube_obj.coord = [tube]
         return tube_obj
 
+    def check_curvatures(points,rad,curvature):
+
+        points = np.array(points)
+        distances = np.array([0])
+        vecnorms = np.array([])
+        for i in range(1,len(curvature)-1):
+            vecnorms = np.append(vecnorms,[np.linalg.norm(points[i-1,:]-points[i,:])],axis=0)
+            if curvature[i] != 0:
+                vec1 = (points[i+1,:]-points[i,:])/np.linalg.norm(points[i+1,:]-points[i,:])
+                vec2 = (points[i-1,:]-points[i,:])/np.linalg.norm(points[i-1,:]-points[i,:])
+
+
+                if vec1[0]*vec2[1]-vec1[1]*vec2[0] == 0:
+                    distances = np.append(distances,[0],axis=0)
+                    continue
+
+                bis = (vec1+vec2)/np.linalg.norm(vec1+vec2)
+
+                crossprod = np.dot(vec1,vec2)
+                if crossprod<-1:
+                    crossprod = -1
+                gamma = np.arccos(crossprod)/2
+
+                D2 = curvature[i]/np.sin(gamma)
+                alpha2 = np.pi/2-gamma
+                distances = np.append(distances,[np.sqrt(D2**2-curvature[i]**2)],axis=0)
+            else:
+                distances = np.append(distances,[0],axis=0)
+        vecnorms = np.append(vecnorms,[np.linalg.norm(points[i+1,:]-points[i,:])],axis=0)
+        distances = np.append(distances,[0],axis=0)
+        return distances, vecnorms
     
     @classmethod    
     def define_tube_broken(cls, points,curvature, rad, dotlen):

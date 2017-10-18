@@ -8,6 +8,35 @@ from shapely.geometry import LineString
 from shapely import ops
 
 import copy
+import re
+
+def get_hershey():
+    hershey_path='/Users/guillaume/Google Drive/PostdocBasel/PyMicrofluidics/hershey.txt'
+    hershey_table = {}
+    first = True
+    with open(hershey_path) as openfileobject:
+        for tline in openfileobject:
+            if re.search('Ascii',tline):
+                if first == False:
+                    newline = hershey_table[asci]['coord'].split('-1,-1,')
+                    newline = [list(filter(None, x.split(','))) for x in newline if len(x)>0]
+                    hershey_table[asci]['coord'] = [np.array([[float(y[x]),float(y[x+1])] for x in range(0,len(y)-1,2)])/21 for y in newline]
+                    if len(hershey_table[asci]['coord'])>0:
+                        middle = 0.5*(np.max(np.concatenate(hershey_table[asci]['coord'])[:,0])+np.min(np.concatenate(hershey_table[asci]['coord'])[:,0]))
+                        #middle = float(middle)
+                        hershey_table[asci]['coord'] = [np.array([[x[0]-middle,x[1]] for x in y]) 
+                                                        for y in hershey_table[asci]['coord']]
+                        hershey_table[asci]['width'] = np.max(np.concatenate(hershey_table[asci]['coord'])[:,0])-np.min(np.concatenate(hershey_table[asci]['coord'])[:,0])
+                    else:
+                        hershey_table[asci]['width'] = 0.5
+                asci = int(re.findall('.*Ascii (\d+).*',tline)[0])
+                width = float(re.findall('\d+,\s*(\d+),.*',tline)[0])
+                hershey_table[asci] = {'coord': '', 'width': width}
+                first = False
+            else:
+                newline = tline.rstrip('\n')
+                hershey_table[asci]['coord'] = hershey_table[asci]['coord']+newline
+    return hershey_table
 
 class Design:
     
@@ -116,7 +145,7 @@ class Design:
         return self
     
 
-    def add_closed_polyline(self, layer_to_use,poly,drawing):
+    def add_polyline(self, layer_to_use,poly,open, drawing):
         """
         Adds a feature to the DXF drawing.
 
@@ -127,8 +156,10 @@ class Design:
         ----------
         layer_to_use : dictionary 
             dictionary with field 'name' of the layer 
-        poly : feature
-            Featue to write in file
+        poly : list of 2D positions lists
+            list of polygons coordinates
+        open : boolean
+            True means the feature is text (open polygon)
         drawing : dxfwrite object
             dxfwrite object openend unsing drawing()  method
 
@@ -145,7 +176,10 @@ class Design:
 
         for y in toplot:
             polyline= dxf.polyline(layer=layer_to_use['name'])
-            polyline.close(True)
+            if open==True:
+                polyline.close(False)
+            else:
+                polyline.close(True)
             y = np.round(100*y)/100
             if layer_to_use['inversion']==0:
                 polyline.add_vertices(y)
@@ -154,6 +188,7 @@ class Design:
             drawing.add(polyline)
 
         return drawing
+    
         
     def draw_design(self):
         """
@@ -181,10 +216,13 @@ class Design:
             drawing.add_layer(self.layers[x]['name'], color=self.layers[x]['color'])
         
         for x in self.features:
-            #self.add_closed_polyline(self.features[x].layer,self.features[x].coord,drawing)
-            self.add_closed_polyline(self.layers[self.features[x].layer],self.features[x].coord,drawing)        
-            #if not self.features[x].mirror == None:
-                #self.add_closed_polyline(self.layers[self.features[x].layer],self.features[x].flip_feature(self.features[x].mirror).coord,drawing)
+            #if self.features[x].open == False:
+            self.add_polyline(self.layers[self.features[x].layer],self.features[x].coord,
+                                     self.features[x].open,drawing)
+            #else:
+                #self.add_text(self.layers[self.features[x].layer],self.features[x].coord,self.features[x].text,drawing)
+                #self.add_polyline(self.layers[self.features[x].layer],self.features[x].coord,drawing)
+            
         self.drawing = drawing
         #return drawing
         
@@ -195,13 +233,15 @@ class Design:
     
 class Feature:
     
-    #design = None
+    hershey_table = get_hershey()
     
-    def __init__(self, coord = None, layer=None, mirror=None):
+    def __init__(self, coord = None, layer=None, mirror=None, open = False, text=None):
         
         self.coord = coord
         self.layer = layer
         self.mirror = mirror
+        self.open = open
+        self.text = text
         
     def __add__(self, other):
         sum_feature = copy.deepcopy(self)
@@ -214,6 +254,7 @@ class Feature:
         else:
             return self.__add__(other)
         
+    
 
     def set_layer(self,layer_name):
         
@@ -246,6 +287,67 @@ class Feature:
         num_obj = cls()
         num_obj.coord = [np.array(polygon)]
         return num_obj
+    
+    
+    @classmethod 
+    def define_text(cls, position, text, scale=1, rotation=0):
+        """
+        Generates a text feature
+
+        Parameters
+        ----------
+        position : 2D point 
+            where to write text
+        text : string
+            what to write
+        scale : float
+            scale of text (default height is 0 for capitals)
+        rotation : float
+            text rotation in radians
+
+        Returns
+        -------
+        feature
+            regular feature
+
+        """
+        
+        position = np.array(position)
+        text_obj = cls()
+        text_obj.coord = []
+        sep = 0.2*scale
+        posref=np.array([0.0,0.0])
+        for x in text:
+            code = ord(x)
+            letter = Feature.hershey_table[code]
+            posref[0]=posref[0]+ scale*np.array(letter['width'])/2+sep
+            #position[0] = position[0] + scale*np.array(letter['width'])/2+sep
+            for k in letter['coord']:
+                if len(k)>0:
+                    k = np.array(k)
+                    coord = [scale*m+posref for m in k]
+                    text_obj.coord.append(np.squeeze(coord))
+            #position[0] = position[0] + scale*np.array(letter['width'])/2
+            posref[0]=posref[0]+ scale*np.array(letter['width'])/2+sep
+        
+        #Rotate the number by alpha
+        if rotation !=0:
+
+            alpha = rotation
+            R = np.array([[np.cos(alpha),-np.sin(alpha)],[np.sin(alpha),np.cos(alpha)]])
+
+            for i in range(len(text_obj.coord)):
+                text_obj.coord[i] = np.squeeze([np.dot([x],R) 
+                                                       for x in text_obj.coord[i]])
+            
+        #move the number to position pos
+        for x in range(len(text_obj.coord)):
+            text_obj.coord[x] = np.array([z+ position for z in text_obj.coord[x]])
+        
+        #set object as text type
+        text_obj.open = True
+        return text_obj
+    
         
     @classmethod    
     def define_tube(cls, points,curvature, rad):
@@ -483,6 +585,34 @@ class Feature:
         return serp_obj
     
     @classmethod
+    def circle(cls, radius, position):
+
+        """
+        Generates punching pad feature.
+
+        Parameters
+        ----------
+        radius : float 
+            circle radius 
+        position : float
+            circle position
+
+        Returns
+        -------
+        mf_feature
+            Coordinates of opne polygon representing the circle
+
+        """
+
+        nb_points = 2*np.pi*radius/1
+        points1 = radius*np.transpose(np.concatenate(([np.cos(2*np.pi*np.arange(0,nb_points+1)/nb_points)],[np.sin(2*np.pi*np.arange(0,nb_points+1)/nb_points)]),axis=0))
+        
+        circle_obj = cls()
+        circle_obj.coord = [points1]
+        circle_obj.open = True
+        return circle_obj
+    
+    @classmethod
     def circular_punching(cls, nb_points,outer_rad, position):
 
         """
@@ -711,7 +841,8 @@ class Feature:
         return num_obj
 
     @classmethod
-    def number_array(cls, scale, num, space, space_series, num_series, origin, subsampling, rotation = 0, values=None):
+    def number_array(cls, scale, num, space, space_series, num_series, 
+                     origin, subsampling, rotation = 0, values=None, thin = True):
         """
         Generates a number array feature
 
@@ -753,11 +884,16 @@ class Feature:
             for j in range(num):
                 xpos = origin[0]+j*space+i*(space*num+space_series)
                 if np.mod(j,subsampling) ==0:
-                    cur_num = Feature.numbering(nums[j], scale, [xpos,origin[1]],rotation).coord
+                    if thin:
+                        cur_num = Feature.define_text([xpos,origin[1]],str(nums[j]), scale, rotation).coord
+                    else:
+                        cur_num = Feature.numbering(nums[j], scale, [xpos,origin[1]],rotation).coord
                     for x in cur_num:
                         all_numbers.append(x)
         all_numbers_obj = cls()
         all_numbers_obj.coord = all_numbers
+        if thin:
+            all_numbers_obj.open = True
         return all_numbers_obj
     
     @classmethod
@@ -1101,5 +1237,7 @@ def has_hole(feature):
     elif feature.geom_type == 'MultiPolygon':
         num_holes = np.sum([len(x.interiors) for x in feature])
     return num_holes
+
+
 
 

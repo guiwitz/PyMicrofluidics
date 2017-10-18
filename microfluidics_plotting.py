@@ -4,6 +4,7 @@ from ipywidgets import interactive
 from ipywidgets import interact, fixed
 from ipywidgets import Checkbox
 from bokeh.models import Range1d
+from bokeh.plotting import figure, output_notebook, show
 
 import numpy as np
 

@@ -374,6 +374,10 @@ class Feature:
 
         """
         points = np.array(points)
+        if (type(curvature) is int) or (type(curvature) is float):
+            curvature = curvature*np.ones(points.shape[0])
+            curvature[0]=0
+            curvature[-1]=0
         curvature = np.array(curvature)
         #verify that curvatures are zero at both ends and that curvature is not larger than
         #the tube radius
@@ -383,28 +387,39 @@ class Feature:
         if curvature[-1] !=0:
             curvature[-1] = 0
             warnings.warn('Last curvature was not 0')
-        
+            
+        adjusted_curvature = False
+        if np.any(curvature[curvature>0]<rad/0.9):
+            warnings.warn('Tube radius cannot be larger than curvature. Forcing larger curvatures')
+            curvature[(curvature<rad/0.9)&(curvature>0)]=rad/0.9
+            adjusted_curvature = True
+
         #verify that the chosen curvature are not too large to be accommodated on the segments
         distances, vecnorms = Feature.check_curvatures(points,rad,curvature)
         all_fact = np.empty((0,2))
         for i in range(points.shape[0]-1):
+            #combined space occupied on a given segment by its two neighboring curved regions
             sum_dist1 = distances[i]+distances[i+1]
+            #ratio of vector length and combined occupied region
             all_fact=np.append(all_fact,np.array([[i,(vecnorms[i]/sum_dist1)]]),axis=0)
+        #sort the ratios from smallest (way to much space occupied by cureved region) to largest 
         order = all_fact[all_fact[:, 1].argsort()][:,0]
+        #if any curved regions take too much space, reduce them by the calculated factor and rerun the 
+        #calculation of occupied region (as they affect two segments). I do that in a sorted way to ensure
+        #that I take first care of the worst cases to avoid over-correcting.
         if np.any(all_fact[:,1]<1):
             warnings.warn('Some curvatures are too large to be accommodated on the given segment lenghts and will be reduced')
             for i in order:#range(points.shape[0]-1):
                 i=int(i)
                 sum_dist1 = distances[i]+distances[i+1]
                 if sum_dist1>vecnorms[i]:
-                    print(vecnorms[i]/sum_dist1)
                     factor = 0.9*(vecnorms[i]/sum_dist1)
                     curvature[i]=factor*curvature[i]
                     curvature[i+1]=factor*curvature[i+1]
                     distances, vecnorms = Feature.check_curvatures(points,rad,curvature)
         
-        if np.any(0.9*curvature[curvature>0]<rad):
-            warnings.warn('Tube radius cannot be larger than curvature. Forcing smaller radius')
+        if np.any(curvature[curvature>0]<rad/0.9):
+            warnings.warn('The chosen combination of path and radius has no solution. The radius is modified!!!')
             rad = 0.9*np.min(curvature[curvature>0])
             
         complete = np.array([points[0,:]])
@@ -467,8 +482,13 @@ class Feature:
         tube_obj.coord = [tube]
         return tube_obj
 
+    #this function is a helper for the tube definition. It checks whether curvatures are compatible with 
+    #the chosnen path. In summary the extent of the curved region cannot be larger than the straight
+    #segments themselves
     def check_curvatures(points,rad,curvature):
 
+        #distances contains a list of the space occupied by the curved region of each vertex
+        #vecnorms contains the length of each segment
         points = np.array(points)
         distances = np.array([0])
         vecnorms = np.array([])

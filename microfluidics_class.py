@@ -387,43 +387,45 @@ class Feature:
         if curvature[-1] !=0:
             curvature[-1] = 0
             warnings.warn('Last curvature was not 0')
-            
-        adjusted_curvature = False
-        if np.any(curvature[curvature>0]<rad/0.9):
-            warnings.warn('Tube radius cannot be larger than curvature. Forcing larger curvatures')
-            curvature[(curvature<rad/0.9)&(curvature>0)]=rad/0.9
-            adjusted_curvature = True
+          
+        #if the tube is made of more than 2 points, check curvatures/radius
+        if points.shape[0]>2:
+            adjusted_curvature = False
+            if np.any(curvature[curvature>0]<rad/0.9):
+                warnings.warn('Tube radius cannot be larger than curvature. Forcing larger curvatures')
+                curvature[(curvature<rad/0.9)&(curvature>0)]=rad/0.9
+                adjusted_curvature = True
 
-        #verify that the chosen curvature are not too large to be accommodated on the segments
-        distances, vecnorms = Feature.check_curvatures(points,rad,curvature)
-        all_fact = np.empty((0,2))
-        for i in range(points.shape[0]-1):
-            #combined space occupied on a given segment by its two neighboring curved regions
-            sum_dist1 = distances[i]+distances[i+1]
-            #ratio of vector length and combined occupied region
-            if sum_dist1>0:
-                all_fact=np.append(all_fact,np.array([[i,(vecnorms[i]/sum_dist1)]]),axis=0)
-            else:
-                all_fact=np.append(all_fact,np.array([[i,2]]),axis=0)
-        #sort the ratios from smallest (way to much space occupied by cureved region) to largest 
-        order = all_fact[all_fact[:, 1].argsort()][:,0]
-        #if any curved regions take too much space, reduce them by the calculated factor and rerun the 
-        #calculation of occupied region (as they affect two segments). I do that in a sorted way to ensure
-        #that I take first care of the worst cases to avoid over-correcting.
-        if np.any(all_fact[:,1]<1):
-            warnings.warn('Some curvatures are too large to be accommodated on the given segment lenghts and will be reduced')
-            for i in order:#range(points.shape[0]-1):
-                i=int(i)
+            #verify that the chosen curvature are not too large to be accommodated on the segments
+            distances, vecnorms = Feature.check_curvatures(points,rad,curvature)
+            all_fact = np.empty((0,2))
+            for i in range(points.shape[0]-1):
+                #combined space occupied on a given segment by its two neighboring curved regions
                 sum_dist1 = distances[i]+distances[i+1]
-                if sum_dist1>vecnorms[i]:
-                    factor = 0.9*(vecnorms[i]/sum_dist1)
-                    curvature[i]=factor*curvature[i]
-                    curvature[i+1]=factor*curvature[i+1]
-                    distances, vecnorms = Feature.check_curvatures(points,rad,curvature)
-        
-        if np.any(curvature[curvature>0]<rad/0.9):
-            warnings.warn('The chosen combination of path and radius has no solution. The radius is modified!!!')
-            rad = 0.9*np.min(curvature[curvature>0])
+                #ratio of vector length and combined occupied region
+                if sum_dist1>0:
+                    all_fact=np.append(all_fact,np.array([[i,(vecnorms[i]/sum_dist1)]]),axis=0)
+                else:
+                    all_fact=np.append(all_fact,np.array([[i,2]]),axis=0)
+            #sort the ratios from smallest (way to much space occupied by cureved region) to largest 
+            order = all_fact[all_fact[:, 1].argsort()][:,0]
+            #if any curved regions take too much space, reduce them by the calculated factor and rerun the 
+            #calculation of occupied region (as they affect two segments). I do that in a sorted way to ensure
+            #that I take first care of the worst cases to avoid over-correcting.
+            if np.any(all_fact[:,1]<1):
+                warnings.warn('Some curvatures are too large to be accommodated on the given segment lenghts and will be reduced')
+                for i in order:#range(points.shape[0]-1):
+                    i=int(i)
+                    sum_dist1 = distances[i]+distances[i+1]
+                    if sum_dist1>vecnorms[i]:
+                        factor = 0.9*(vecnorms[i]/sum_dist1)
+                        curvature[i]=factor*curvature[i]
+                        curvature[i+1]=factor*curvature[i+1]
+                        distances, vecnorms = Feature.check_curvatures(points,rad,curvature)
+
+            if np.any(curvature[curvature>0]<rad/0.9):
+                warnings.warn('The chosen combination of path and radius has no solution. The radius is modified!!!')
+                rad = 0.9*np.min(curvature[curvature>0])
             
         complete = np.array([points[0,:]])
         for i in range(1,len(curvature)):

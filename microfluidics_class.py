@@ -13,7 +13,7 @@ import warnings
 
 
 def get_hershey():
-    hershey_path='/Users/guillaume/Google Drive/PostdocBasel/PyMicrofluidics/hershey.txt'
+    hershey_path='./hershey.txt'
     hershey_table = {}
     first = True
     with open(hershey_path) as openfileobject:

@@ -374,13 +374,14 @@ class Feature:
 
         """
         
+        points = np.array(points)
+        
         if (type(curvature) is int) or (type(curvature) is float):
             curvature = curvature*np.ones(points.shape[0])
             curvature[0]=0
             curvature[-1]=0
         curvature = np.array(curvature)
         
-        points = np.array(points)
         #remove points whose distance is close to zero
         cond = np.concatenate((np.array([100]),np.linalg.norm(np.diff(points,axis=0),axis=1)))>0.001
         points = points[cond]

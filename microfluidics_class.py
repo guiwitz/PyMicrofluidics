@@ -319,18 +319,27 @@ class Feature:
         text_obj.coord = []
         sep = 0.2*scale
         posref=np.array([0.0,0.0])
-        for x in text:
-            code = ord(x)
+        
+        #complete text length
+        #textlen = 0.5*sep*(len(text)-1)+0.5*scale * np.sum([np.array(Feature.hershey_table[ord(text[x])]['width']) for x in range(len(text))])
+        for x in range(len(text)):
+            code = ord(text[x])
             letter = Feature.hershey_table[code]
-            posref[0]=posref[0]+ scale*np.array(letter['width'])/2+sep
+            if x>0:
+                posref[0]=posref[0]+ scale*np.array(letter['width'])/2+sep
+            #posref[0] = posref[0]-textlen
             #position[0] = position[0] + scale*np.array(letter['width'])/2+sep
             for k in letter['coord']:
                 if len(k)>0:
                     k = np.array(k)
-                    coord = [scale*m+posref for m in k]
+                    coord = [scale*m+posref-np.array([0,0.5*scale]) for m in k]
                     text_obj.coord.append(np.squeeze(coord))
-            #position[0] = position[0] + scale*np.array(letter['width'])/2
             posref[0]=posref[0]+ scale*np.array(letter['width'])/2+sep
+            
+        #align number
+        posref[0]=posref[0]- scale*np.array(letter['width'])/2-sep
+        for x in range(len(text_obj.coord)):
+            text_obj.coord[x] = np.array([z- np.array([posref[0]/2,0]) for z in text_obj.coord[x]])
         
         #Rotate the number by alpha
         if rotation !=0:
@@ -346,6 +355,8 @@ class Feature:
         for x in range(len(text_obj.coord)):
             text_obj.coord[x] = np.array([z+ position for z in text_obj.coord[x]])
         
+        #for x in range(len(text_obj.coord)):
+        #    text_obj.coord[x]=Feature.define_tube(text_obj.coord[x],1,50).coord[0]
         #set object as text type
         text_obj.open = True
         return text_obj
@@ -383,7 +394,8 @@ class Feature:
         curvature = np.array(curvature)
         
         #remove points whose distance is close to zero
-        cond = np.concatenate((np.array([100]),np.linalg.norm(np.diff(points,axis=0),axis=1)))>0.001
+        cond = np.concatenate((np.array([100]),np.linalg.norm(np.diff(points,axis=0),axis=1)))>0.000001
+        #print(cond)
         points = points[cond]
         curvature = curvature[cond]
         
@@ -395,7 +407,8 @@ class Feature:
         if curvature[-1] !=0:
             curvature[-1] = 0
             warnings.warn('Last curvature was not 0')
-          
+        
+        
         #if the tube is made of more than 2 points, check curvatures/radius
         if points.shape[0]>2:
             adjusted_curvature = False

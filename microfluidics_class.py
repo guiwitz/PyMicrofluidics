@@ -11,6 +11,10 @@ import copy
 import re
 import warnings
 
+import scipy.interpolate
+
+from scipy.interpolate import CubicSpline
+
 
 def get_hershey():
     hershey_path='./hershey.txt'
@@ -355,8 +359,35 @@ class Feature:
         for x in range(len(text_obj.coord)):
             text_obj.coord[x] = np.array([z+ position for z in text_obj.coord[x]])
         
-        #for x in range(len(text_obj.coord)):
-        #    text_obj.coord[x]=Feature.define_tube(text_obj.coord[x],1,50).coord[0]
+        #make thick numbers (currently unused)
+        '''for n in range(len(text_obj.coord)):
+            x = text_obj.coord[n][:,0]
+            y = text_obj.coord[n][:,1]
+            x2 = np.array([[x[i],(2/3*x[i]+1/3*x[i+1]),(1/3*x[i]+2/3*x[i+1])] for i in range(x.shape[0]-1)])
+            y2 = np.array([[y[i],(2/3*y[i]+1/3*y[i+1]),(1/3*y[i]+2/3*y[i+1])] for i in range(y.shape[0]-1)])
+            x2 = np.concatenate(x2)
+            x2 = np.append(x2,x[-1])
+            y2 = np.concatenate(y2)
+            y2 = np.append(y2,y[-1])
+            x=x2
+            y=y2
+
+            #nt = np.linspace(0, 1, 40)
+            #t = np.zeros(x.shape)
+            #t[1:] = np.sqrt((x[1:] - x[:-1])**2 + (y[1:] - y[:-1])**2)
+            #t = np.cumsum(t)
+            #t /= t[-1]
+            #x2 = scipy.interpolate.spline(t, x, nt,order=2)
+            #y2 = scipy.interpolate.spline(t, y, nt,order=2)
+            newcoord = np.stack((x2,y2),axis=1)
+            
+            csx = CubicSpline(np.linspace(0, 1, x.shape[0]), x,bc_type = 'clamped')
+            csy = CubicSpline(np.linspace(0, 1, y.shape[0]), y,bc_type = 'clamped')
+            
+            xs = np.linspace(0, 1,1000)
+            newcoord = np.stack((csx(xs),csy(xs)),axis=1)
+  
+            text_obj.coord[n]=Feature.define_tube(newcoord,0,100).coord[0]'''
         #set object as text type
         text_obj.open = True
         return text_obj

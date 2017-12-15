@@ -383,7 +383,7 @@ class Feature:
             
             csx = CubicSpline(np.linspace(0, 1, x.shape[0]), x,bc_type = 'clamped')
             csy = CubicSpline(np.linspace(0, 1, y.shape[0]), y,bc_type = 'clamped')
-            
+            s
             xs = np.linspace(0, 1,1000)
             newcoord = np.stack((csx(xs),csy(xs)),axis=1)
   

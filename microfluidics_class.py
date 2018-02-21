@@ -17,6 +17,9 @@ from scipy.interpolate import CubicSpline
 
 
 def get_hershey():
+    """
+        Parsing of a hershey table to generate numbers. This is only for internal purposes.
+    """
     hershey_path='./hershey.txt'
     hershey_table = {}
     first = True
@@ -845,6 +848,7 @@ class Feature:
 
         ch_array_obj = cls()
         ch_array_obj.coord = ch_array
+        ch_array_obj.params = {'length':length, 'num':num, 'space':space, 'space_series':space_series, 'widths':widths, 'origin':origin, 'subsampling':subsampling}
         return ch_array_obj
 
     @classmethod
@@ -1347,7 +1351,43 @@ class Feature:
         topoinvert_obj.coord = back
         return topoinvert_obj
     
-    
+    def channel_array_blocks(self, fraction, block_len, block_from_bottom):
+        """
+        Creates blocks within channels of a channel array.
+
+
+        Parameters
+        ----------
+        channel_array : feature
+            channel_array to be modfied
+        fraction : float
+            fraction of channel width to block
+        block_len : float
+            height of the block
+        block_from_bottom: float
+            distance of the block from the bottom of the channel
+
+        Returns
+        -------
+        feature
+            modified channel array
+
+        """
+        params = self.params
+        myarray2 = Feature.channel_array(length=block_len,num=params['num'],space = params['space'],space_series = params['space_series'],widths = params['widths']*fraction,origin=np.array(params['origin'])+np.array([0,-params['length']+block_len+block_from_bottom]), subsampling=params['subsampling'])
+        new_feature = Feature()
+        for i in range(len(self.coord)):
+            back_square = self.coord[i]
+            curr_feature = Feature()
+            curr_feature.coord = [myarray2.coord[i]]
+
+            temp = Feature.reverse_feature(curr_feature, back_square)
+            if new_feature.coord:
+                new_feature = Feature.combine_features(new_feature,temp)
+            else:
+                new_feature = temp
+        self.coord = new_feature.coord
+        return self
     
     
 def has_hole(feature):

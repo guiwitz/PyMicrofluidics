@@ -1351,7 +1351,7 @@ class Feature:
         topoinvert_obj.coord = back
         return topoinvert_obj
     
-    def channel_array_blocks(self, fraction, block_len, block_from_bottom):
+    def channel_array_blocks(self, opening_width, block_len, block_from_bottom):
         """
         Creates blocks within channels of a channel array.
 
@@ -1360,8 +1360,8 @@ class Feature:
         ----------
         channel_array : feature
             channel_array to be modfied
-        fraction : float
-            fraction of channel width to block
+        opening_width : float
+            free space on each side of the block
         block_len : float
             height of the block
         block_from_bottom: float
@@ -1374,7 +1374,7 @@ class Feature:
 
         """
         params = self.params
-        myarray2 = Feature.channel_array(length=block_len,num=params['num'],space = params['space'],space_series = params['space_series'],widths = params['widths']*fraction,origin=np.array(params['origin'])+np.array([0,-params['length']+block_len+block_from_bottom]), subsampling=params['subsampling'])
+        myarray2 = Feature.channel_array(length=block_len,num=params['num'],space = params['space'],space_series = params['space_series'],widths = params['widths']-2*opening_width,origin=np.array(params['origin'])+np.array([0,-params['length']+block_len+block_from_bottom]), subsampling=params['subsampling'])
         new_feature = Feature()
         for i in range(len(self.coord)):
             back_square = self.coord[i]

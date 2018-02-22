@@ -2,12 +2,12 @@
 PyMicrofluidics is a python module that allows you to create create complex DXF designs. It is specifically written for mirofluidics designs as it contains several pre-made classical microfluidics features in the form of parametrical functions (e.g. a sperpentine of adjustable size, alignement markers). It also offers the possibility to easily create channels with rounded contours and fixed width, a feature often necessary in microfluidics applications. In addition, it allows one to easily handle the case of multi-layer design, where different layers are often printed one the two halves of a mask.
 
 ## Required packages
-scipy
-numpy
-shapely
+scipy  
+numpy  
+shapely  
 dxfwrite
 
-##Example
+## Example
 
 ```python
 from dxfwrite import DXFEngine as dxf

@@ -1373,8 +1373,28 @@ class Feature:
             modified channel array
 
         """
+        
         params = self.params
-        myarray2 = Feature.channel_array(length=block_len,num=params['num'],space = params['space'],space_series = params['space_series'],widths = params['widths']-2*opening_width,origin=np.array(params['origin'])+np.array([0,-params['length']+block_len+block_from_bottom]), subsampling=params['subsampling'])
+        count = 0
+        for i in range(len(params['widths'])):
+            back_square = self.coord[i*params['num']]
+            center_x = 0.5*(np.min(back_square[:,0])+np.max(back_square[:,0]))
+            center_y = np.min(back_square[:,1])                     
+            block = Feature.define_polygon([[center_x-params['widths'][i]/2+opening_width,center_y+block_from_bottom],[center_x+params['widths'][i]/2-opening_width,center_y+block_from_bottom],[center_x+params['widths'][i]/2-opening_width,center_y+block_from_bottom+block_len],[center_x-params['widths'][i]/2+opening_width, center_y+block_from_bottom+block_len]])
+                                   
+            temp = Feature.reverse_feature(block, back_square)
+            for j in range(params['num']):
+                if np.mod(j,params['subsampling']) ==0:
+                    new_coord = temp.coord
+                    new_coord = [x+np.repeat([[j*params['space'],0]],[x.shape[0]],axis = 0) for x in new_coord]
+                    self.coord[count] = new_coord
+                    count+=1
+        self.coord = [item for sublist in self.coord for item in sublist]
+
+        
+        
+        '''params = self.params
+        myarray2 = Feature.channel_array(length=block_len,num=params['num'],space = params['space'],space_series = params['space_series'],widths = [x-2*opening_width for x in params['widths']],origin=np.array(params['origin'])+np.array([0,-params['length']+block_len+block_from_bottom]), subsampling=params['subsampling'])
         new_feature = Feature()
         for i in range(len(self.coord)):
             back_square = self.coord[i]
@@ -1386,7 +1406,7 @@ class Feature:
                 new_feature = Feature.combine_features(new_feature,temp)
             else:
                 new_feature = temp
-        self.coord = new_feature.coord
+        self.coord = new_feature.coord'''
         return self
     
     

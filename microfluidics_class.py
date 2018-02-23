@@ -721,7 +721,7 @@ class Feature:
         return serp_obj
     
     @classmethod
-    def circle(cls, radius, position):
+    def circle(cls, radius, position, open_circle=False):
 
         """
         Generates punching pad feature.
@@ -743,9 +743,12 @@ class Feature:
         nb_points = 2*np.pi*radius/1
         points1 = radius*np.transpose(np.concatenate(([np.cos(2*np.pi*np.arange(0,nb_points+1)/nb_points)],[np.sin(2*np.pi*np.arange(0,nb_points+1)/nb_points)]),axis=0))
         
+        for y in range(points1.shape[0]):
+            points1[y,:]=points1[y,:]+position
+                
         circle_obj = cls()
         circle_obj.coord = [points1]
-        circle_obj.open = True
+        circle_obj.open = open_circle
         return circle_obj
     
     @classmethod

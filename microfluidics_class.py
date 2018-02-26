@@ -1198,6 +1198,91 @@ class Feature:
     
         return (align1_obj, align2_obj)
     
+    @classmethod
+    def pad_with_filter(cls, position, filter_size, filter_number, pad_size, rect_size, funnel_width, funnel_end):
+
+        """
+        Creates a punching pad with filter.
+
+        The filter region is composed of arrays of squares of different sizes. The size of 
+        the filter region is set by the number and sizes of those arrays. The filter region is flanked on one side 
+        by a half-circle punching region and on the other by a funnel-shaped region that connnects to a channel. 
+
+        Parameters
+        ----------
+        position : 2D list 
+            Position of pad. This point locates the point where the pad is connected to a potential channel
+        filter_size  : 2D list 
+            Sizes of squares forming the filter
+        filter_number : 2D list
+            Number of series of each square size
+        pad_size : float
+            Height of the pad. Also sets the diameter of half-circle punching pad
+        rect_size : float
+            Width of the rectangular region between hafl-circle and filers
+        funnel_width : float
+            Width of funnel-shaped region
+        funnel_end : float
+            height of the smaller section of the funnel that connects to a potential channel
+
+        Returns
+        -------
+        feature
+
+        Usage
+        -----
+        filterpad_feature = Feature.pad_with_filter([0,0], [20,10,5], [2,2,5], 500, 50, 100, 10)
+        """
+        
+        position = np.array(position)
+        filter_size = np.array(filter_size)
+        filter_number = np.array(filter_number)
+        
+        #with of rectangle between half-circle and filters
+        init_square = rect_size
+
+        #lower-left position of the first "filter-channel
+        init_pos = np.array([position[0]-np.sum(filter_size*filter_number*2)-funnel_width,position[1]-pad_size/2])
+
+        #pattern contains all coordinates composing the filter
+        #first define the funnel part connecting to a channel
+        pattern = [np.array([[position[0]-funnel_width,position[1]-pad_size/2],[position[0]-funnel_width,position[1]+pad_size/2],
+                             [position[0],position[1]+funnel_end/2],[position[0],position[1]-funnel_end/2]])]
+
+        #define rectangular part between half-circle and filter
+        pattern.append(np.array([[init_pos[0]-init_square,init_pos[1]],[init_pos[0],init_pos[1]],
+                                 [init_pos[0],init_pos[1]+pad_size],[init_pos[0]-init_square,init_pos[1]+pad_size]]))
+
+        #define the half-circle punching pad
+        half_circle = np.array([[init_pos[0]-init_square+pad_size/2*np.cos(x),position[1]+pad_size/2*np.sin(x)] 
+                                for x in np.linspace(np.pi/2,np.pi*3/2)])
+        pattern.append(half_circle)
+
+        #define filter region composed of vertical channels and horizontal squares
+        for i in range(len(filter_size)):
+            for f in range(filter_number[i]):
+
+                shift = np.mod(f,2)*filter_size[i]
+                sq_coord = [[init_pos[0]+filter_size[i],init_pos[1]],[init_pos[0]+2*filter_size[i],init_pos[1]],
+                                [init_pos[0]+2*filter_size[i],init_pos[1]+pad_size],[init_pos[0]+filter_size[i],init_pos[1]+pad_size]]
+                pattern.append(np.array(sq_coord))
+
+                for j in range(int(np.round(pad_size/filter_size[i]/2))):
+
+                    sq_coord = [[init_pos[0],init_pos[1]+shift],[init_pos[0]+filter_size[i],init_pos[1]+shift],
+                                [init_pos[0]+filter_size[i],init_pos[1]+filter_size[i]+shift],[init_pos[0],init_pos[1]+filter_size[i]+shift]]
+                    pattern.append(np.array(sq_coord))
+                    init_pos = init_pos+np.array([0,2*filter_size[i]])
+                init_pos[0]=init_pos[0]+2*filter_size[i]
+                init_pos[1]=position[1]-pad_size/2
+        
+        filter_pad_obj = cls()
+        filter_pad_obj.coord = pattern
+    
+        return filter_pad_obj
+
+
+    
         
     def flip_feature(self, ax):
         """
@@ -1273,7 +1358,41 @@ class Feature:
         """
         for x in range(len(self.coord)):
             self.coord[x] = np.array([y+np.array(move) for y in self.coord[x]])
-        return self    
+        return self
+    
+    def rotate(self,center, angle):
+        """
+        Moves a feature.
+        
+        Adds to each coordinate of a feature the displacement given by the parameter move.
+
+        Parameters
+        ----------
+        
+        center: 2D list
+            center of rotation
+        angel: float
+            angle of rotation
+        
+        Returns
+        -------
+        feature
+            feature roated by angle around center
+
+        """
+        
+        self.coord = [x-np.repeat([[center[0],center[1]]],[x.shape[0]],axis = 0) for x in self.coord]
+
+        alpha = angle
+        R = np.array([[np.cos(alpha),-np.sin(alpha)],[np.sin(alpha),np.cos(alpha)]])
+        
+        for i in range(len(self.coord)):
+            self.coord[i] = np.squeeze([np.dot([x],R) for x in self.coord[i]])
+
+        self.coord = [x+np.repeat([[center[0],center[1]]],[x.shape[0]],axis = 0) for x in self.coord]
+
+        return self
+    
     
     def combine_features(feature1, feature2):
         """

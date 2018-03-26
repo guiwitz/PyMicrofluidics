@@ -11,7 +11,7 @@ general features of the project and specific drawing implementations respectivel
 visualize the design in a Jupyter notebook. It requires the installation (not done automatically) of the bokeh package.
 
 ## Installation
-Clone this repository or download the pymicrofluidics folder. Add the path to the modules directly to the python
+Clone this repository or download it. Add the path to that folder directly to the python
 path of your project. Alternatively, make the module accessible from anywhere on your computer by navigating to the
 pymicrofluidics folder and typing:  
 

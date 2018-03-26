@@ -1,5 +1,5 @@
 import numpy as np
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 from dxfwrite import DXFEngine as dxf
 
 from shapely.geometry import Polygon
@@ -11,16 +11,17 @@ import copy
 import re
 import warnings
 
-import scipy.interpolate
+import pkg_resources
 
-from scipy.interpolate import CubicSpline
+#import scipy.interpolate
+#from scipy.interpolate import CubicSpline
 
 
 def get_hershey():
     """
         Parsing of a hershey table to generate numbers. This is only for internal purposes.
     """
-    hershey_path='./hershey.txt'
+    hershey_path = pkg_resources.resource_filename('pymicrofluidics', 'data/hershey.txt')
     hershey_table = {}
     first = True
     with open(hershey_path) as openfileobject:

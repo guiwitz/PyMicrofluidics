@@ -1,8 +1,30 @@
 # PyMicrofluidics
-PyMicrofluidics is a python module that allows you to create create complex DXF designs. It is specifically written for mirofluidics designs as it contains several pre-made classical microfluidics features in the form of parametrical functions (e.g. a sperpentine of adjustable size, alignement markers). It also offers the possibility to easily create channels with rounded contours and fixed width, a feature often necessary in microfluidics applications. In addition, it allows one to easily handle the case of multi-layer design, where different layers are often printed one the two halves of a mask.
+PyMicrofluidics is a python module that allows you to create create complex DXF designs. It is specifically written
+for mirofluidics designs as it contains several pre-made classical microfluidics features in the form of parametrical
+functions (e.g. a sperpentine of adjustable size, alignement markers). It also offers the possibility to easily
+create channels with rounded contours and fixed width, a feature often necessary in microfluidics applications.
+In addition, it allows one to easily handle the case of multi-layer design, where different layers are often printed
+one the two halves of a mask.
+
+Two modules are available: mdfdesign and mfplotting. mfdesign contains the two main classes Design and Features handling
+general features of the project and specific drawing implementations respectively. mfplotting allows to directly
+visualize the design in a Jupyter notebook. It requires the installation (not done automatically) of the bokeh package.
+
+## Installation
+Clone this repository or download the pymicrofluidics folder. Add the path to the modules directly to the python
+path of your project. Alternatively, make the module accessible from anywhere on your computer by navigating to the
+pymicrofluidics folder and typing:
+pip3 install pymicrofluidics
+or
+pip3 install pymicrofluidics --upgrade
+to install an updated version of the package.
+
+The modules are then accessible using e.g.:
+```python
+ from pymicrofluidics.mfdesign import Design
+```
 
 ## Required packages
-scipy  
 numpy  
 shapely  
 dxfwrite
@@ -10,11 +32,10 @@ dxfwrite
 ## Example
 
 ```python
-from dxfwrite import DXFEngine as dxf
 import numpy as np
 
-from microfluidics_class import Design
-from microfluidics_class import Feature
+from pymicrofluidics.mfdesign import Design
+from pymicrofluidics.mfdesign import Feature
 
 design = Design()
 design.add_layer('Layer1', {'name':'first_layer','color':1, 'inversion':0})

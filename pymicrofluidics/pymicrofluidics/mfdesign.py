@@ -806,7 +806,17 @@ class Feature:
         punching_obj = cls()
         punching_obj.coord = punching
         return punching_obj
-    
+ 
+
+    @classmethod
+    def punching_dotted(cls, position, punch_rad, rad, dotlen):
+        nb_points = round(2*np.pi*punch_rad)
+        xy = [(position[0]+punch_rad*np.cos(2*np.pi*i/nb_points), 
+               position[1]+punch_rad*np.sin(2*np.pi*i/nb_points)) for i in range(nb_points)]
+        obj = Feature.define_tube_broken(xy, punch_rad, rad, dotlen)
+        return obj
+
+
     @classmethod
     def channel_array(cls, length, num, space, space_series, widths, origin, subsampling):
         """
@@ -1098,7 +1108,8 @@ class Feature:
         return pattern_obj
     
     @classmethod
-    def align_mark_squares(cls, pos, rotation = False):
+    def align_mark_squares(cls, pos, rotation = False, 
+                           overlap = 2, sq_sizes = [4, 7, 12, 22, 32, 132, 202]):
 
         """
         Creates standard alignement marks for SU8 lithography
@@ -1121,10 +1132,7 @@ class Feature:
 
         """
 
-        overlap = 2
-        sq_sizes = [4, 7, 12, 22, 32, 132, 202]
         pos_init = np.array([-overlap/2,overlap/2])
-
         all_sq = []
 
         init_sq = np.array([[0,0], [0,sq_sizes[0]],[-sq_sizes[0],sq_sizes[0]],[-sq_sizes[0],0]])
@@ -1281,6 +1289,100 @@ class Feature:
         filter_pad_obj.coord = pattern
     
         return filter_pad_obj
+
+    @classmethod
+    def inline_filter(cls, position, pore_size, pore_number, filter_size, funnel_width, funnel_tip, rad, before, after):
+
+        """
+        Creates a punching pad with filter.
+
+        The filter region is composed of arrays of squares of different sizes. The size of 
+        the filter region is set by the number and sizes of those arrays. The filter region is flanked on one side 
+        by a half-circle punching region and on the other by a funnel-shaped region that connnects to a channel. 
+
+        Parameters
+        ----------
+        position : 2D list 
+            Position of pad. This point locates the point where the filter output (excluding a possible tube after)
+        pore_size  : 2D list 
+            Sizes of squares forming the filter
+        pore_number : 2D list
+            Number of series of each square size
+        filter_size : float
+            Height of the filter. 
+        funnel_width : float
+            Width of funnel-shaped region
+        rad : float
+            half height of the smaller section of the funnel that connects to a potential channel
+
+        Returns
+        -------
+        feature
+
+        Usage
+        -----
+        filter_feature = Feature.inline_filter([0,0], [20,10,5], [2,2,5], 500, 50, 50, 25, 0, 0)
+        """
+        
+        position = np.array(position)
+        pore_size = np.array(pore_size)
+        pore_number = np.array(pore_number)
+        
+        #with of rectangle between half-circle and filters
+#        init_square = rect_size
+
+        #lower-left position of the first "filter-channel
+        init_pos = np.array([position[0]-np.sum(pore_size*pore_number*2)-funnel_width,position[1]-filter_size/2])
+
+        #pattern contains all coordinates composing the filter
+        #first define the output funnel part
+        pattern = [np.array([[position[0]-funnel_width,position[1]-filter_size/2],
+                             [position[0]-funnel_width,position[1]+filter_size/2],
+                             [position[0],position[1]+funnel_tip],[position[0],position[1]-funnel_tip]])]
+
+        #define rectangular part between half-circle and filter
+        pattern.append(np.array([[init_pos[0]-pore_size[0],init_pos[1]],[init_pos[0],init_pos[1]],
+                                 [init_pos[0],init_pos[1]+filter_size],[init_pos[0]-pore_size[0],init_pos[1]+filter_size]]))
+
+        # define the input funnel part
+        pattern.append(np.array([[init_pos[0]-pore_size[0],init_pos[1]], 
+                                 [init_pos[0]-pore_size[0],init_pos[1]+filter_size],
+                                 [init_pos[0]-pore_size[0]-funnel_width,position[1]+funnel_tip], 
+                                 [init_pos[0]-pore_size[0]-funnel_width,position[1]-funnel_tip]])) 
+        
+        # append tubes before and after
+        if before > 0:
+            pattern.append(np.array([[init_pos[0]-pore_size[0]-funnel_width,position[1]+rad], 
+                                     [init_pos[0]-pore_size[0]-funnel_width,position[1]-rad],
+                                     [init_pos[0]-pore_size[0]-funnel_width-before,position[1]-rad], 
+                                     [init_pos[0]-pore_size[0]-funnel_width-before,position[1]+rad] ])) 
+        if after > 0:
+            pattern.append(np.array([[position[0],position[1]+rad],[position[0],position[1]-rad],
+                                     [position[0]+after,position[1]-rad],[position[0]+after,position[1]+rad]])) 
+
+        #define filter region composed of vertical channels and horizontal squares
+        for i in range(len(pore_size)):
+            for f in range(pore_number[i]):
+
+                shift = np.mod(f,2)*pore_size[i]
+                sq_coord = [[init_pos[0]+pore_size[i],init_pos[1]],[init_pos[0]+2*pore_size[i],init_pos[1]],
+                                [init_pos[0]+2*pore_size[i],init_pos[1]+filter_size],[init_pos[0]+pore_size[i],init_pos[1]+filter_size]]
+                pattern.append(np.array(sq_coord))
+
+                for j in range(int(np.round(filter_size/pore_size[i]/2))):
+
+                    sq_coord = [[init_pos[0],init_pos[1]+shift],[init_pos[0]+pore_size[i],init_pos[1]+shift],
+                                [init_pos[0]+pore_size[i],init_pos[1]+pore_size[i]+shift],[init_pos[0],init_pos[1]+pore_size[i]+shift]]
+                    pattern.append(np.array(sq_coord))
+                    init_pos = init_pos+np.array([0,2*pore_size[i]])
+                init_pos[0]=init_pos[0]+2*pore_size[i]
+                init_pos[1]=position[1]-filter_size/2
+        
+        filter_pad_obj = cls()
+        filter_pad_obj.coord = pattern
+    
+        return filter_pad_obj
+
 
 
     

@@ -13,13 +13,13 @@ visualize the design in a Jupyter notebook. It requires the installation (not do
 ## Installation
 Clone this repository or download it. Add the path to that folder directly to the python
 path of your project. Alternatively, make the module accessible from anywhere on your computer by navigating to the
-pymicrofluidics folder and typing:  
+pymicrofluidics folder (the one containing setup.py) and typing:  
 
-pip3 install pymicrofluidics  
+pip3 install .  
 
 or  
 
-pip3 install pymicrofluidics --upgrade  
+pip3 install . --upgrade  
 
 to install an updated version of the package.
 

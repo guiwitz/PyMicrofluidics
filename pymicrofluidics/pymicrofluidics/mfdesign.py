@@ -60,6 +60,11 @@ class Design:
     
     def __add__(self, other):
         sum_design = copy.deepcopy(self)
+        for l in other.layers:
+            if l in sum_design.layers.keys():
+                if other.layers[l] != sum_design.layers[l]:
+                    raise Exception("Trying to add two designs where layers with the same name aren't identical.") 
+            sum_design.layers[l] = other.layers[l]
         for f in other.features:
             new_name = f
             suffix = 0

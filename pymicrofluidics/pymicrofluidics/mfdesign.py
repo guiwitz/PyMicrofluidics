@@ -1611,7 +1611,12 @@ class Feature:
         params = self.params
         count = 0
         for i in range(len(params['widths'])):
-            back_square = self.coord[i*params['num']] if params['subsampling']>0 else self.coord[i*params['num']+1]
+            if params['subsampling']>0:
+                back_square = self.coord[i*params['num']]
+            else:
+                back_square = self.coord[i*params['num']+1].copy()
+                back_square = back_square-np.repeat([[params['space'],0]],[back_square.shape[0]],axis = 0)
+                
             center_x = 0.5*(np.min(back_square[:,0])+np.max(back_square[:,0]))
             center_y = np.min(back_square[:,1])                     
             block = Feature.define_polygon([[center_x-params['widths'][i]/2+opening_width,center_y+block_from_bottom],[center_x+params['widths'][i]/2-opening_width,center_y+block_from_bottom],[center_x+params['widths'][i]/2-opening_width,center_y+block_from_bottom+block_len],[center_x-params['widths'][i]/2+opening_width, center_y+block_from_bottom+block_len]])

@@ -818,7 +818,7 @@ class Feature:
 
 
     @classmethod
-    def channel_array(cls, length, num, space, space_series, widths, origin, subsampling):
+    def channel_array(cls, length, num, space, space_series, widths, origin, subsampling=1):
         """
         Generates a channel array feature
 
@@ -842,7 +842,8 @@ class Feature:
         origin : float
             Position of the array (top-left)
         subsampling: int
-            Use only every subsampling'th channel
+            if >0 Use only every subsampling'th channel
+            if <0 remove every -subsampling'th channel
 
         Returns
         -------
@@ -850,15 +851,18 @@ class Feature:
             List of 2d numpy arrays specifying the position of each channel
 
         """
+        if (subsampling == 0) or (subsampling == -1):
+            raise ValueError('Subsampling cannot be 0 or -1')
+            
         ch_array = [np.zeros((4,2)) for x in range(num*len(widths))]
         count = 0
         for i in range(len(widths)):
             for j in range(num):
-                if np.mod(j,subsampling) ==0:
+                if ((subsampling>0) and (np.mod(j,subsampling) ==0)) or ((subsampling<0) and (np.mod(j,-subsampling) != 0)):
                     xpos = origin[0]+j*space+i*(space*num+space_series)
                     points = [[xpos,origin[1]],[xpos, origin[1]-length]]
-                    ch_array[count] = Feature.define_tube(points,[0,0],widths[i]/2).coord[0]
-                    count = count+1
+                    ch_array[count] = Feature.define_tube(points,[0,0],widths[i]/2).coord[0]                    
+                count = count+1
 
         ch_array_obj = cls()
         ch_array_obj.coord = ch_array
@@ -1602,19 +1606,27 @@ class Feature:
         params = self.params
         count = 0
         for i in range(len(params['widths'])):
-            back_square = self.coord[i*params['num']]
+            back_square = self.coord[i*params['num']] if params['subsampling']>0 else self.coord[i*params['num']+1]
             center_x = 0.5*(np.min(back_square[:,0])+np.max(back_square[:,0]))
             center_y = np.min(back_square[:,1])                     
             block = Feature.define_polygon([[center_x-params['widths'][i]/2+opening_width,center_y+block_from_bottom],[center_x+params['widths'][i]/2-opening_width,center_y+block_from_bottom],[center_x+params['widths'][i]/2-opening_width,center_y+block_from_bottom+block_len],[center_x-params['widths'][i]/2+opening_width, center_y+block_from_bottom+block_len]])
                                    
             temp = Feature.reverse_feature(block, back_square)
             for j in range(params['num']):
-                if np.mod(j,params['subsampling']) ==0:
+                if ((params['subsampling']>0) and (np.mod(j,params['subsampling']) ==0)) or ((params['subsampling']<0) and (np.mod(j,-params['subsampling']) != 0)):
                     new_coord = temp.coord
                     new_coord = [x+np.repeat([[j*params['space'],0]],[x.shape[0]],axis = 0) for x in new_coord]
                     self.coord[count] = new_coord
-                    count+=1
-        self.coord = [item for sublist in self.coord for item in sublist]
+                count+=1
+        #self.coord = [item for sublist in self.coord for item in sublist]
+        temp = []
+        for x in self.coord:
+            if(isinstance(x, list)):
+                for y in x: 
+                    temp.append(y)
+            else:
+                temp.append(x)
+        self.coord = temp
 
         
         

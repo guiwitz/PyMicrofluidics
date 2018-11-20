@@ -649,10 +649,10 @@ class Feature:
             serpentine starts 'left' or 'right'
         bottom_top : str
             serpentine starts 'top' or 'bottom'
-        prune_first : float (optionnal)
-            cut a given fraction of the first segment
-        prune_last : float (optionnal)
-            cut a given fraction of the last segment
+        prune_first : int (optionnal)
+            cut a given length of the first segment (append one if negative value)
+        prune_last : int (optionnal)
+            cut a given length of the last segment (append one if negative value)
 
 
         Returns
@@ -685,21 +685,21 @@ class Feature:
         serp = serp[1::,:]
 
         # prune first and last
-        if not 0 <= prune_first <= 1:
-            raise ValueError('prune_first must be between 0 and 1.')
-        if not 0 <= prune_last <= 1:
-            raise ValueError('prune_last must be between 0 and 1.')        
+#         if not -1 <= prune_first <= 1:
+#             raise ValueError('prune_first must be between -1 and 1.')
+#         if not -1 <= prune_last <= 1:
+#             raise ValueError('prune_last must be between -1 and 1.')        
 
-        if prune_first>0 and left_right=='left':
-            serp[0] = [serp[1][0]*prune_first, serp[1][1]] 
-        if prune_first>0 and left_right=='right':
-            serp[0] = [serp[0][0]*(1-prune_first), serp[0][1]] 
-        if prune_last>0 and (left_right=='left' and np.mod(nbseg,2)==0 or 
+        if left_right=='left':
+            serp[0] = [serp[1][0]-(length-prune_first), serp[1][1]] 
+        if left_right=='right':
+            serp[0] = [serp[0][0]-prune_first, serp[0][1]] 
+        if (left_right=='left' and np.mod(nbseg,2)==0 or 
                                  left_right=='right' and np.mod(nbseg,2)==1):
-            serp[-1] = [serp[-2][0]*prune_last, serp[-1][1]] 
-        if prune_last>0 and (left_right=='left' and np.mod(nbseg,2)==1 or 
+            serp[-1] = [serp[-2][0]-(length-prune_last), serp[-1][1]] 
+        if (left_right=='left' and np.mod(nbseg,2)==1 or 
                                  left_right=='right' and np.mod(nbseg,2)==0):
-            serp[-1] = [serp[-1][0]*(1-prune_last), serp[-1][1]] 
+            serp[-1] = [serp[-1][0]-prune_last, serp[-1][1]] 
 
         # rotate it to match orientation and direction
         if (left_right == 'right'):

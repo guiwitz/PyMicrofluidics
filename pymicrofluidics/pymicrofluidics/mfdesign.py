@@ -1300,7 +1300,7 @@ class Feature:
         return filter_pad_obj
 
     @classmethod
-    def inline_filter(cls, position, pore_size, pore_number, filter_size, funnel_width, funnel_tip, rad, before, after):
+    def inline_filter(cls, position, pore_size, pore_number, filter_size, funnel_width, funnel_tip, rad, before=0, after=0, pore_dist=None):
 
         """
         Creates a punching pad with filter.
@@ -1336,7 +1336,10 @@ class Feature:
         position = np.array(position)
         pore_size = np.array(pore_size)
         pore_number = np.array(pore_number)
-        
+        if pore_dist is None:
+        	pore_dist = np.ones(len(pore_size))
+        else:
+        	pore_dist = np.array(pore_dist)
         #with of rectangle between half-circle and filters
 #        init_square = rect_size
 
@@ -1372,19 +1375,17 @@ class Feature:
         #define filter region composed of vertical channels and horizontal squares
         for i in range(len(pore_size)):
             for f in range(pore_number[i]):
-
-                shift = np.mod(f,2)*pore_size[i]
                 sq_coord = [[init_pos[0]+pore_size[i],init_pos[1]],[init_pos[0]+2*pore_size[i],init_pos[1]],
                                 [init_pos[0]+2*pore_size[i],init_pos[1]+filter_size],[init_pos[0]+pore_size[i],init_pos[1]+filter_size]]
                 pattern.append(np.array(sq_coord))
 
-                for j in range(int(np.round(filter_size/pore_size[i]/2))):
-
+                shift = np.mod(f,2)*np.round(pore_size[i]*(1+pore_dist[i])/2)
+                for j in range(int(np.round(filter_size/(pore_size[i]*(1+pore_dist[i]))))):
                     sq_coord = [[init_pos[0],init_pos[1]+shift],[init_pos[0]+pore_size[i],init_pos[1]+shift],
                                 [init_pos[0]+pore_size[i],init_pos[1]+pore_size[i]+shift],[init_pos[0],init_pos[1]+pore_size[i]+shift]]
                     pattern.append(np.array(sq_coord))
-                    init_pos = init_pos+np.array([0,2*pore_size[i]])
-                init_pos[0]=init_pos[0]+2*pore_size[i]
+                    init_pos = init_pos+np.array([0,pore_size[i]*(1+pore_dist[i])])
+                init_pos[0]=init_pos[0]+pore_size[i]*2
                 init_pos[1]=position[1]-filter_size/2
         
         filter_pad_obj = cls()

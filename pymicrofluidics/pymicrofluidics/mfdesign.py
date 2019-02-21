@@ -107,7 +107,7 @@ class Design:
         self.features[name] = feature
         
         if not feature.mirror == None:
-            self.features[name+'_mirror'] = feature.flip_feature(feature.mirror)
+            self.features[name+'_mirror'] = feature.mirror_feature(y=feature.mirror)
                 
     def get_coord(self,name):
         return self.features[name].coord
@@ -1217,6 +1217,62 @@ class Feature:
         return (align1_obj, align2_obj)
     
     @classmethod
+    def align_mark_rulers(cls, pos, rotation = False, 
+                           half_length = 250, thickness = 10, cross_thickness = 50, 
+                           pitches = [500, 100, 25], widths = [100, 75, 50]):
+
+        """
+        Creates standard alignement marks for SU8 lithography
+
+        Creates a pair of alignement marks in the form of two features. One can set their position
+        as well as their orientation (it's useful to use both regular and 45° rotated version to have
+        more precision and/or use multilayers).
+
+        Parameters
+        ----------
+        pos : 2D list 
+            Position of the mark
+        rotation  : boolean
+            False do not rotate, True rotate by 90°
+
+        Returns
+        -------
+        tuple of features
+            features for dxf design
+
+        """
+
+        horiz = cls()
+        horiz.coord=[]
+        for i in range(len(widths)):
+            horiz = Feature.combine_features(horiz, 
+                Feature.channel_array(widths[i], half_length // pitches[i] + 1, pitches[i], 0, [thickness], 
+                                        [0, -(2 * half_length - max(widths)) ]) )
+        horiz = Feature.combine_features(horiz, horiz.mirror_feature(x=0) )
+
+        vert = horiz.copy()
+        vert.rotate([2 * half_length - max(widths), -(2 * half_length - max(widths))], np.pi/2)
+        
+        cross = Feature.combine_features(
+            Feature.define_tube(([-half_length, 0], [half_length, 0]), 0, cross_thickness), 
+            Feature.define_tube(([0, -half_length], [0, half_length]), 0, cross_thickness) )
+
+        align1_obj = Feature.combine_features(horiz, vert)
+        align1_obj = Feature.combine_features(align1_obj, cross)
+        align2_obj = Feature.combine_features(
+            horiz.mirror_feature(y=-(2 * half_length - max(widths)) + (min(pitches)-thickness)/2), 
+            vert.mirror_feature(x=2 * half_length - max(widths) + (min(pitches)-thickness)/2) )
+        align2_obj = Feature.combine_features(align2_obj, cross)
+        
+        if rotation:
+            align1_obj.rotate([0,0], np.pi/2)
+            align2_obj.rotate([0,0], np.pi/2)
+        align1_obj.move(pos)
+        align2_obj.move(pos)
+        
+        return (align1_obj, align2_obj)
+    
+    @classmethod
     def pad_with_filter(cls, position, filter_size, filter_number, pad_size, rect_size, funnel_width, funnel_end):
 
         """
@@ -1337,9 +1393,9 @@ class Feature:
         pore_size = np.array(pore_size)
         pore_number = np.array(pore_number)
         if pore_dist is None:
-        	pore_dist = np.ones(len(pore_size))
+            pore_dist = np.ones(len(pore_size))
         else:
-        	pore_dist = np.array(pore_dist)
+            pore_dist = np.array(pore_dist)
         #with of rectangle between half-circle and filters
 #        init_square = rect_size
 
@@ -1394,16 +1450,18 @@ class Feature:
         return filter_pad_obj
 
 
-
     
         
-    def flip_feature(self, ax):
+    def mirror_feature(self, x=None, y=None):
         """
-        Flips a feature along the horizontal axis located at position ax.
+        Return a flipped copy of a feature along the vertical axis located at position x
+        and along the horizontal axis located at position y.
 
         Parameters
         ----------
-        ax : float
+        x : float
+            horizontal position of the vertical axis
+        y : float
             vertical position of the horizontal axis
 
         Returns
@@ -1415,10 +1473,14 @@ class Feature:
 
         #mirrored = Feature()
         mirrored = copy.deepcopy(self)
-        for i in range(mirrored.feature_len()):
-            mirrored.coord[i] = np.array([[x[0],2*ax-x[1]] for x in mirrored.coord[i]])
+        if not x == None:
+            for i in range(mirrored.feature_len()):
+                mirrored.coord[i] = np.array([[2*x-c[0],c[1]] for c in mirrored.coord[i]])
+        if not y == None:
+            for i in range(mirrored.feature_len()):
+                mirrored.coord[i] = np.array([[c[0],2*y-c[1]] for c in mirrored.coord[i]])        
         return mirrored
-    
+
     def feature_len(self):
         """
         Returns the number of parts composing a feature.

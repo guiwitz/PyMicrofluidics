@@ -1217,7 +1217,7 @@ class Feature:
         return (align1_obj, align2_obj)
     
     @classmethod
-    def align_mark_rulers(cls, pos, rotation = False, 
+    def align_mark_rulers(cls, pos, rotation = False, inset_scale=1/5,
                            half_length = 250, thickness = 10, cross_thickness = 50, 
                            pitches = [500, 100, 25], widths = [100, 75, 50]):
 
@@ -1263,6 +1263,17 @@ class Feature:
             horiz.mirror_feature(y=-(2 * half_length - max(widths)) + (min(pitches)-thickness)/2), 
             vert.mirror_feature(x=2 * half_length - max(widths) + (min(pitches)-thickness)/2) )
         align2_obj = Feature.combine_features(align2_obj, cross)
+
+        if not inset_scale == None:
+            align1_obj = Feature.combine_features(align1_obj, 
+                align1_obj.copy().scale(inset_scale).move([half_length/2, -half_length/2]))
+            align2_obj = Feature.combine_features(align2_obj, 
+                align2_obj.copy().scale(inset_scale).move([half_length/2, -half_length/2]))
+        align1_obj = Feature.union(align1_obj)
+        align2_obj = Feature.union(align2_obj)
+
+        # ruler opacity must be inverted on second layer
+        align2_obj = Feature.reverse_feature(align2_obj, np.array(([-2.5,2.5], [2.5,2.5], [2.5,-2.5], [-2.5,-2.5]))*half_length)        
         
         if rotation:
             align1_obj.rotate([0,0], np.pi/2)
@@ -1535,6 +1546,28 @@ class Feature:
             self.coord[x] = np.array([y+np.array(move) for y in self.coord[x]])
         return self
     
+    def scale(self,factor):
+        """
+        Scales a feature.
+        
+        Scale to each coordinate of a feature by a given factor.
+
+        Parameters
+        ----------
+        
+        factor: float
+            scaling factor
+        
+        Returns
+        -------
+        feature
+            feature scaled by
+
+        """
+        for x in range(len(self.coord)):
+            self.coord[x] = np.array([y*factor for y in self.coord[x]])
+        return self
+    
     def rotate(self,center, angle):
         """
         Moves a feature.
@@ -1591,6 +1624,37 @@ class Feature:
         new_feature.coord = feature1.coord.copy()
         for x in feature2.coord:
             new_feature.coord.append(x)
+        return new_feature
+    
+
+    def union(feature):
+        """
+        Geometric union of a all parts from a combined feature
+        
+        Parameters
+        ----------
+        
+        feature: (combined) feature
+        
+        Returns
+        -------
+        feature
+            new feature unionizing all parts of the input feature
+
+        """
+
+        mp = MultiPolygon([Polygon([tuple(z) for z in y]) for y in feature.coord])
+        union = ops.cascaded_union(mp)
+        
+        coords = []        
+        if union.geom_type == 'Polygon':
+            coords.append(np.array(union.exterior.coords))
+        if union.geom_type == 'MultiPolygon':
+            for x in union:
+                coords.append(np.array(x.exterior.coords))
+
+        new_feature = Feature()
+        new_feature.coord = coords
         return new_feature
     
 
@@ -1682,7 +1746,8 @@ class Feature:
                 
             center_x = 0.5*(np.min(back_square[:,0])+np.max(back_square[:,0]))
             center_y = np.min(back_square[:,1])                     
-            block = Feature.define_polygon([[center_x-params['widths'][i]/2+opening_width,center_y+block_from_bottom],[center_x+params['widths'][i]/2-opening_width,center_y+block_from_bottom],[center_x+params['widths'][i]/2-opening_width,center_y+block_from_bottom+block_len],[center_x-params['widths'][i]/2+opening_width, center_y+block_from_bottom+block_len]])
+            block = Feature.define_polygon([[center_x-params['widths'][i]/2+opening_width,center_y+block_from_bottom],[center_x+params['widths'][i]/2-opening_width,center_y+block_from_bottom],
+                [center_x+params['widths'][i]/2-opening_width,center_y+block_from_bottom+block_len],[center_x-params['widths'][i]/2+opening_width, center_y+block_from_bottom+block_len]])
                                    
             temp = Feature.reverse_feature(block, back_square)
             for j in range(params['num']):

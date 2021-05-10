@@ -891,6 +891,77 @@ class Feature:
         return ch_array_obj
 
     @classmethod
+    def polygon_array(cls, polygon, num, space, space_series, n_series, origin, subsampling=1):
+        """
+        Generates an array of polygonal features
+
+        The polygon array is composed following the syntax of channel arrays.
+        Coordinate (0, 0) of the polygon is positioned at the origin of the polygon occurence (i.e. x=0 is at the center of the corresponding channel)
+
+        Parameters
+        ----------
+        polygon : 
+            Object to tile 
+        num : int
+            Number of channels in a series
+        space : float
+            Separation between channels
+        space_series : float
+            Separation between channel-series
+        n_series : int
+            number of series
+        origin : float
+            Position of the array (top-left)
+        subsampling: int
+            if >0 Use only every subsampling'th channel
+            if <0 remove every -subsampling'th channel
+
+        Returns
+        -------
+        mf_feature
+            List of 2d numpy arrays specifying the position of polygon
+
+        """
+        if (subsampling == 0) or (subsampling == -1):
+            raise ValueError('Subsampling cannot be 0 or -1')        
+        
+#        # this chunck draws only the first element of complex objects i.e. polygon.coord[0]
+#         pg_array = [polygon.coord[0] for x in range(num*n_series)]
+#         count = 0
+#         for i in range(n_series):
+#             for j in range(num):
+#                 if ((subsampling>0) and (np.mod(j,subsampling) ==0)) or ((subsampling<0) and (np.mod(j,-subsampling) != 0)):
+#                     xpos = origin[0]+j*space+i*(space*num+space_series) # - polygon_hwidth
+#                     pg_array[count] = [ (c[0]+xpos, c[1]+origin[1]) for c in polygon.coord[0] ]                    
+#                 count = count+1
+        #print(pg_array[count-1])
+        
+#        # this chunck is a failed attempt at a syntax with better mem allocation
+#         pg_array = np.zeros_like( np.tile(polygon.coord, num*n_series*len(polygon.coord)) )
+#         count = 0
+#         for i in range(n_series):
+#             for j in range(num):
+#                 for k in range(len(polygon.coord)):
+#                     if ((subsampling>0) and (np.mod(j,subsampling) ==0)) or ((subsampling<0) and (np.mod(j,-subsampling) != 0)):
+#                         xpos = origin[0]+j*space+i*(space*num+space_series) # - polygon_hwidth
+#                         pg_array[count] = [ (c[0]+xpos, c[1]+origin[1]) for c in polygon.coord[k] ]
+#                     count = count+1
+#         pg_array = list(pg_array)
+
+        pg_array = []
+        for i in range(n_series):
+            for j in range(num):
+                for k in range(len(polygon.coord)):
+                    if ((subsampling>0) and (np.mod(j,subsampling) ==0)) or ((subsampling<0) and (np.mod(j,-subsampling) != 0)):
+                        xpos = origin[0]+j*space+i*(space*num+space_series) # - polygon_hwidth
+                        pg_array.append([ (c[0]+xpos, c[1]+origin[1]) for c in polygon.coord[k] ])
+        
+        pg_array_obj = cls()
+        pg_array_obj.coord = pg_array
+        pg_array_obj.params = {'num':num, 'space':space, 'space_series':space_series, 'n_series':n_series, 'origin':origin, 'subsampling':subsampling}
+        return pg_array_obj
+
+    @classmethod
     def numbering(cls, num, scale, pos, rotation=0, space_factor=1.2):
         """
         Creates a "polygon-number" in the form of a feature.

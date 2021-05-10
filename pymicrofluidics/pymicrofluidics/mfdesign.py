@@ -586,7 +586,7 @@ class Feature:
         return distances, vecnorms
     
     @classmethod    
-    def define_tube_broken(cls, points,curvature, rad, dotlen):
+    def define_tube_broken(cls, points,curvature, rad, dotlen, dotspace=None):
         """
         Generates polygon coordinates of a tube
 
@@ -600,7 +600,10 @@ class Feature:
             Tube curvature for each segment
         rad : float
             Tube radius
-        dotlen : length of broken line segments
+        dotlen : float
+            Length of broken line segments
+        dotspace : float
+            Space between broken line segments
 
         Returns
         -------
@@ -608,12 +611,27 @@ class Feature:
             Coordinates of polygon representing the broken line tube
 
         """
+        
+        # in order to draw the tube with curvature, 3 points are necessary for every dash.
+        # for equal spacing, the initial code sliced the interpolated path into chunks of dotlen/2
+        # and used 3 points for a dash then skipped one (and iterate)
+        # current code cuts into 2 chunks of dotlen/2, 1 chunk of dotspace, and iterate
+        # like this no point must be skipped.
+        
+        # reverse compatibility :-/
+        if dotspace is None:
+            dotlen = dotlen
+            dotspace = dotlen
+        
         points = np.array(points)
         totlen = np.sum(np.linalg.norm(np.diff(np.array(points),axis=0), axis=1))
-        interpol_points = np.array([np.array(LineString(tuple(points)).interpolate(x).coords).squeeze() for x in np.arange(0,totlen,dotlen/2)]).squeeze()
+#         breaks = np.arange(0,totlen,dotlen/2)
+        breaks = np.append(0, np.cumsum(np.tile([dotlen/2, dotlen/2, dotspace], int(np.ceil(totlen/(dotlen+dotspace))))) )
+        breaks = breaks[np.where(breaks < totlen)]
+        interpol_points = np.array([np.array(LineString(tuple(points)).interpolate(x).coords).squeeze() for x in breaks]).squeeze()
         
-        broken_lines = [interpol_points[x:x+3] for x in range(0,interpol_points.shape[0]-4,4)]
-        #print([x for x in broken_lines])
+        broken_lines = [interpol_points[x:x+3] for x in range(0,interpol_points.shape[0]-3,3)]
+#         print([x for x in broken_lines])
         broken_lines_feature = []
         #for x in broken_lines:
         #    broken_lines_feature.append(Feature.define_tube(x, [0,curvature,0], rad))
@@ -621,8 +639,6 @@ class Feature:
         
         broken_lines_feature = sum([Feature.define_tube(x, [0,curvature,0], rad) for x in broken_lines])
         return broken_lines_feature
-
-    
     
     @classmethod   
     def serpentine(cls, nbseg, dist, rad, length, curvature, origin, orientation, left_right, bottom_top, prune_first=0, prune_last=0):
@@ -834,7 +850,7 @@ class Feature:
 
         Parameters
         ----------
-        nbseg : float 
+        length : float 
             Channel length
         num : int
             Number of channels in a series

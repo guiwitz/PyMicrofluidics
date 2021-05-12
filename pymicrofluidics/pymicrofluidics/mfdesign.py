@@ -891,6 +891,81 @@ class Feature:
         return ch_array_obj
 
     @classmethod
+    def polygon_array(cls, polygon, num, space, space_series, n_series, origin, subsampling=1):
+        """
+        Generates an array of polygonal features
+
+        The polygon array is composed following the syntax of channel arrays.
+        Coordinate (0, 0) of the polygon is positioned at the origin of the polygon occurence (i.e. x=0 is at the center of the corresponding channel)
+
+        Parameters
+        ----------
+        polygon : 
+            Object to tile 
+        num : int
+            Number of channels in a series
+        space : float
+            Separation between channels
+        space_series : float
+            Separation between channel-series
+        n_series : int
+            number of series
+        origin : float
+            Position of the array (top-left)
+        subsampling: int
+            if >0 Use only every subsampling'th channel
+            if <0 remove every -subsampling'th channel
+
+        Returns
+        -------
+        mf_feature
+            List of 2d numpy arrays specifying the position of polygon
+
+        """
+        if (subsampling == 0) or (subsampling == -1):
+            raise ValueError('Subsampling cannot be 0 or -1')        
+        
+        # take care of subsampling
+        n_series_np = np.arange(0,n_series)
+        if subsampling>0:
+            num_np = [x for x in range(num) if np.mod(x, subsampling)==0]
+        else:
+            num_np = [x for x in range(num) if np.mod(x, subsampling)!=0]
+        num_poly = np.arange(0, len(polygon.coord))
+
+        # create arrays with combinations of objects and series positions 
+        m1, m2 = np.meshgrid(n_series_np, num_np, indexing='ij')
+
+        # compute all x locations
+        all_coords = np.ravel(origin[0] + m2*space+m1*(space*num+space_series))
+
+        # combine x with y locations
+        all_coords = np.stack([all_coords, origin[1]*np.ones_like(all_coords)])
+
+        # concatenate all polygons and keep their length in memory
+        poly_len = [len(p) for p in polygon.coord]
+        poly_concat = np.concatenate(polygon.coord)
+
+        # compute final coordinates using broadcasting
+        # num_poly_edges x 2 x 1
+        #                x 2 x num_new_coords
+        # num_poly_edges x 2 x num_new_coords
+        complete = np.moveaxis(poly_concat[:,:, np.newaxis] + all_coords, 2,0)
+
+        # reshape as long 2d list of length num_new_coords * num_poly_edges
+        commplete_reshaped = np.reshape(complete, (complete.shape[0]*complete.shape[1], 2))
+
+        # split into correct polygon lists
+        split_pos=np.cumsum(num * n_series * poly_len)
+        pg_array = np.split(commplete_reshaped, split_pos[:-1])
+
+        pg_array_obj = cls()
+        pg_array_obj.coord = pg_array
+        pg_array_obj.params = {'num':num, 'space':space, 'space_series':space_series, 'n_series':n_series, 'origin':origin, 'subsampling':subsampling}
+        
+        return pg_array_obj
+
+    @classmethod
     def numbering(cls, num, scale, pos, rotation=0, space_factor=1.2):
         """
         Creates a "polygon-number" in the form of a feature.

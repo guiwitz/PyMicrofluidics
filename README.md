@@ -1,7 +1,8 @@
 # PyMicrofluidics
+
 PyMicrofluidics is a python module that allows you to create create complex DXF designs. It is specifically written
 for mirofluidics designs as it contains several pre-made classical microfluidics features in the form of parametrical
-functions (e.g. a sperpentine of adjustable size, alignement markers). It also offers the possibility to easily
+functions (e.g. a serpentine of adjustable size, alignment markers). It also offers the possibility to easily
 create channels with rounded contours and fixed width, a feature often necessary in microfluidics applications.
 In addition, it allows one to easily handle the case of multi-layer design, where different layers are often printed
 one the two halves of a mask.
@@ -11,12 +12,21 @@ general features of the project and specific drawing implementations respectivel
 visualize the design in a Jupyter notebook. It requires the installation (not done automatically) of the bokeh package.
 
 ## Installation
-Clone this repository or download it. Add the path to that folder directly to the python
-path of your project. Alternatively, make the module accessible from anywhere on your computer by navigating to the
-pymicrofluidics folder (the one containing setup.py) and typing 
-`pip3 install .`
-or 
-`pip3 install . --upgrade`
+
+You can install this package directly from GitHub using the following command:
+
+```
+pip install "git+https://github.com/guiwitz/PyMicrofluidics#egg=pymicrofluidics&subdirectory=pymicrofluidics"
+```
+
+Alternatively you can clone or download this repository and install the package locally. For that, move to the ```pymicrofluidics``` folder (containing the ```setup.py``` file) and use:
+
+```pip install .```
+
+or
+
+```pip install . --upgrade```
+
 to install an updated version of the package.
 
 The modules are then accessible using e.g.:
@@ -28,6 +38,7 @@ The modules are then accessible using e.g.:
 - numpy  
 - shapely  
 - dxfwrite
+- bokeh
 
 ## Example
 

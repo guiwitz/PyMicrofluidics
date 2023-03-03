@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='pymicrofluidics',
-      version='0.2.3',
+      version='0.2.4',
       description='Making microfludics designs',
       url='https://github.com/guiwitz/PyMicrofluidics',
       author='Guillaume Witz',

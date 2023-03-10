@@ -1045,7 +1045,7 @@ class Feature:
 
             #make each number a single polygon (without holes)
             number_int = MultiPolygon([Polygon([tuple(z) for z in y]) for y in numbers_rad[x]])
-            solution = ops.cascaded_union(number_int)
+            solution = ops.unary_union(number_int)
             solution = [np.array(solution.exterior.coords)]
 
             #change the scale of each number
@@ -1735,13 +1735,13 @@ class Feature:
         """
 
         mp = MultiPolygon([Polygon([tuple(z) for z in y]) for y in feature.coord])
-        union = ops.cascaded_union(mp)
+        union = ops.unary_union(mp)
         
         coords = []        
         if union.geom_type == 'Polygon':
             coords.append(np.array(union.exterior.coords))
         if union.geom_type == 'MultiPolygon':
-            for x in union:
+            for x in union.geoms:
                 coords.append(np.array(x.exterior.coords))
 
         new_feature = Feature()
@@ -1794,7 +1794,7 @@ class Feature:
             if difference.geom_type == 'Polygon':
                 back.append(np.array(difference.exterior.coords))
             if difference.geom_type == 'MultiPolygon':
-                for x in difference:
+                for x in difference.geoms:
                     back.append(np.array(x.exterior.coords))
             init = init+height-0.5
             height = 0.5
@@ -1894,7 +1894,7 @@ def has_hole(feature):
     if feature.geom_type == 'Polygon':
         num_holes = len(feature.interiors)
     elif feature.geom_type == 'MultiPolygon':
-        num_holes = np.sum([len(x.interiors) for x in feature])
+        num_holes = np.sum([len(x.interiors) for x in feature.geoms])
     return num_holes
 
 

@@ -16,7 +16,7 @@ visualize the design in a Jupyter notebook. It requires the installation (not do
 You can install this package directly from GitHub using the following command:
 
 ```
-pip install "git+https://github.com/guiwitz/PyMicrofluidics#egg=pymicrofluidics&subdirectory=pymicrofluidics"
+pip install "git+https://github.com/guiwitz/PyMicrofluidics.git@v0.2.4#egg=pymicrofluidics&subdirectory=pymicrofluidics"
 ```
 
 Alternatively you can clone or download this repository and install the package locally. For that, move to the ```pymicrofluidics``` folder (containing the ```setup.py``` file) and use:

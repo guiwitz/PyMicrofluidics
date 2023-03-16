@@ -21,7 +21,7 @@ def get_hershey():
     """
         Parsing of a hershey table to generate numbers. This is only for internal purposes.
     """
-    hershey_path = pkg_resources.resource_filename('pymicrofluidics', 'data/hershey.txt')
+    hershey_path = pkg_resources.resource_filename('pymicrofluidics', '../data/hershey.txt')
     hershey_table = {}
     first = True
     with open(hershey_path) as openfileobject:

@@ -1,0 +1,35 @@
+# https://peps.python.org/pep-0517/
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+# https://peps.python.org/pep-0621/
+[project]
+name = "pymicrofluidics"
+description = "pymicrofluidics is a python package that allows you to create create complex microfluidics designs."
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "BSD 3-Clause License" }
+authors = [
+    { email = "guillaume.witz@unibe.ch", name = "Guillaume Witz" },
+]
+dynamic = ["version"]
+dependencies = [
+    "numpy",
+    "dxfwrite",
+    "shapely",
+    "bokeh",
+    "ipywidgets"
+]
+
+[tool.hatch.version]
+source = "vcs"
+
+# extras
+# https://peps.python.org/pep-0621/#dependencies-optional-dependencies
+[project.optional-dependencies]
+test = ["pytest>=6.0"]
+
+[project.urls]
+homepage = "https://github.com/guiwitz/PyMicrofluidics"
+repository = "https://github.com/guiwitz/PyMicrofluidics"

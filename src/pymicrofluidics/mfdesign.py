@@ -237,6 +237,8 @@ class Design:
         for x in self.features:
             self.add_polyline(self.layers[self.features[x].layer],self.features[x].coord,
                                      self.features[x].open)
+        
+        self.drawing.saveas(self.file)
     
 
     def draw_gds(self):
@@ -268,10 +270,7 @@ class Design:
         if self.file is None:
             raise Exception("No file name given. Use design.file to set name.")
         filename = Path(self.file).with_suffix('.gds')
-        lib.write_gds(filename)
-        
-    def close(self):
-        self.drawing.saveas(self.file)
+        lib.write_gds(filename)        
         
     
     

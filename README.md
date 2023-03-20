@@ -43,7 +43,7 @@ The modules are then accessible using e.g.:
 If you want to save your design in GDS format, you need to install an additional package. You can do this by using:
 
 ```
-pip install "git+https://github.com/guiwitz/PyMicrofluidics.git[gds]"
+pip install "pymicrofluidics[gds] @ git+https://github.com/guiwitz/PyMicrofluidics.git"
 ```
 
 ## Required packages

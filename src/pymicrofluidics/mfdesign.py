@@ -10,6 +10,7 @@ from shapely import ops
 import copy
 import re
 import warnings
+from pathlib import Path
 
 import pkg_resources
 
@@ -225,6 +226,9 @@ class Design:
             Same drawing as input but with new feature added
 
         """
+        if self.file == None:
+            raise Exception("No file name given. Use design.file to set name.")
+        
         drawing = dxf.drawing(self.file)
         
         for x in self.layers:
@@ -240,6 +244,37 @@ class Design:
             
         self.drawing = drawing
         #return drawing
+
+    def draw_gds(self):
+        """
+        Save a design in GDS format.
+
+        """
+
+        import gdstk
+
+        lib = gdstk.Library()
+
+        cell = lib.new_cell("FIRST")
+
+        for x, feature in self.features.items():
+            curr_layer = list(self.layers.keys()).index(self.features[x].layer)
+            for y in feature.coord:
+                
+                y = np.round(100*y)/100
+                if self.layers[feature.layer]['inversion']==1:
+                    y = -y
+                        
+                if feature.text_width is not None:
+                    fp1 = gdstk.FlexPath(y, width=feature.text_width, simple_path=True, layer=curr_layer)
+                    cell.add(fp1)
+                else:
+                    cell.add(gdstk.Polygon(y, curr_layer))
+        
+        if self.file is None:
+            raise Exception("No file name given. Use design.file to set name.")
+        filename = Path(self.file).with_suffix('.gds')
+        lib.write_gds(filename)
         
     def close(self):
         self.drawing.save()
@@ -250,13 +285,13 @@ class Feature:
     
     hershey_table = get_hershey()
     
-    def __init__(self, coord = None, layer=None, mirror=None, open = False, text=None):
+    def __init__(self, coord = None, layer=None, mirror=None, open=False, text_width=None):
         
         self.coord = coord
         self.layer = layer
         self.mirror = mirror
         self.open = open
-        self.text = text
+        self.text_width = text_width
         
     def __add__(self, other):
         sum_feature = copy.deepcopy(self)
@@ -305,7 +340,7 @@ class Feature:
     
     
     @classmethod 
-    def define_text(cls, position, text, scale=1, rotation=0):
+    def define_text(cls, position, text, scale=1, rotation=0, text_width=1):
         """
         Generates a text feature
 
@@ -319,11 +354,13 @@ class Feature:
             scale of text (default height is 0 for capitals)
         rotation : float
             text rotation in radians
+        text_width : float
+            text width when writing GDS file
 
         Returns
         -------
-        feature
-            regular feature
+        text_obj
+            Feature object
 
         """
         
@@ -399,6 +436,7 @@ class Feature:
             text_obj.coord[n]=Feature.define_tube(newcoord,0,100).coord[0]'''
         #set object as text type
         text_obj.open = True
+        text_obj.text_width = text_width
         return text_obj
     
         
@@ -1093,7 +1131,8 @@ class Feature:
 
     @classmethod
     def number_array(cls, scale, num, space, space_series, num_series, 
-                     origin, subsampling, rotation = 0, values=None, thin = True):
+                     origin, subsampling, rotation=0, values=None,
+                     thin=True, text_width=None):
         """
         Generates a number array feature
 
@@ -1118,6 +1157,8 @@ class Feature:
             Use only every subsampling'th number
         rotation : float
             Angle in radians by which to rotate the numbers
+        text_width: float
+            Width of the text used only for GDS saving
 
         Returns
         -------
@@ -1136,7 +1177,7 @@ class Feature:
                 xpos = origin[0]+j*space+i*(space*num+space_series)
                 if np.mod(j,subsampling) ==0:
                     if thin:
-                        cur_num = Feature.define_text([xpos,origin[1]],str(nums[j]), scale, rotation).coord
+                        cur_num = Feature.define_text([xpos,origin[1]],str(nums[j]), scale, rotation, text_width=text_width).coord
                     else:
                         cur_num = Feature.numbering(nums[j], scale, [xpos,origin[1]],rotation).coord
                     for x in cur_num:
@@ -1145,6 +1186,7 @@ class Feature:
         all_numbers_obj.coord = all_numbers
         if thin:
             all_numbers_obj.open = True
+            all_numbers_obj.text_width = text_width
         return all_numbers_obj
     
     @classmethod

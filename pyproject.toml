@@ -29,6 +29,7 @@ source = "vcs"
 # https://peps.python.org/pep-0621/#dependencies-optional-dependencies
 [project.optional-dependencies]
 test = ["pytest>=6.0"]
+gds = ["gdstk"]
 
 [project.urls]
 homepage = "https://github.com/guiwitz/PyMicrofluidics"

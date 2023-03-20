@@ -39,6 +39,13 @@ The modules are then accessible using e.g.:
  from pymicrofluidics.mfdesign import Design
 ```
 
+### GDS format
+If you want to save your design in GDS format, you need to install an additional package. You can do this by using:
+
+```
+pip install "git+https://github.com/guiwitz/PyMicrofluidics.git[gds]"
+```
+
 ## Required packages
 - numpy  
 - shapely  
@@ -76,6 +83,9 @@ design.file = './example.dxf'
 
 #draw full design
 design.draw_design()
+
+#save in GDS format. Only works if gdstk is installed (see above)
+design.draw_gds('./example_gds.gds')
 
 #close the drawing
 design.close()

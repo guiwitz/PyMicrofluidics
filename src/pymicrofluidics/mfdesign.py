@@ -1,6 +1,6 @@
 import numpy as np
 #import matplotlib.pyplot as plt
-from dxfwrite import DXFEngine as dxf
+import ezdxf
 
 from shapely.geometry import Polygon
 from shapely.geometry import MultiPolygon
@@ -161,7 +161,7 @@ class Design:
         return self
     
 
-    def add_polyline(self, layer_to_use,poly,open, drawing):
+    def add_polyline(self, layer_to_use,poly,open):
         """
         Adds a feature to the DXF drawing.
 
@@ -176,13 +176,10 @@ class Design:
             list of polygons coordinates
         open : boolean
             True means the feature is text (open polygon)
-        drawing : dxfwrite object
-            dxfwrite object openend unsing drawing()  method
 
         Returns
         -------
-        dxfwrite object
-            Same drawing as input but with new feature added
+        
 
         """
         if type(poly) is not list:
@@ -191,19 +188,20 @@ class Design:
             toplot = poly
 
         for y in toplot:
-            polyline= dxf.polyline(layer=layer_to_use['name'])
+
+            polyline = self.msp.add_polyline2d(
+                points=[],
+                dxfattribs={'layer': layer_to_use['name']})
+
             if open==True:
                 polyline.close(False)
             else:
                 polyline.close(True)
             y = np.round(100*y)/100
             if layer_to_use['inversion']==0:
-                polyline.add_vertices(y)
+                polyline.append_vertices(y)
             else:
-                polyline.add_vertices(-y)
-            drawing.add(polyline)
-
-        return drawing
+                polyline.append_vertices(-y)
     
         
     def draw_design(self):
@@ -226,24 +224,20 @@ class Design:
             Same drawing as input but with new feature added
 
         """
+
         if self.file == None:
             raise Exception("No file name given. Use design.file to set name.")
-        
-        drawing = dxf.drawing(self.file)
+            
+        self.drawing = ezdxf.new(dxfversion="R2010")
+        self.msp = self.drawing.modelspace()
         
         for x in self.layers:
-            drawing.add_layer(self.layers[x]['name'], color=self.layers[x]['color'])
-        
+            self.drawing.layers.add(self.layers[x]['name'], color=self.layers[x]['color'])
+
         for x in self.features:
-            #if self.features[x].open == False:
             self.add_polyline(self.layers[self.features[x].layer],self.features[x].coord,
-                                     self.features[x].open,drawing)
-            #else:
-                #self.add_text(self.layers[self.features[x].layer],self.features[x].coord,self.features[x].text,drawing)
-                #self.add_polyline(self.layers[self.features[x].layer],self.features[x].coord,drawing)
-            
-        self.drawing = drawing
-        #return drawing
+                                     self.features[x].open)
+    
 
     def draw_gds(self):
         """
@@ -277,7 +271,7 @@ class Design:
         lib.write_gds(filename)
         
     def close(self):
-        self.drawing.save()
+        self.drawing.saveas(self.file)
         
     
     

@@ -22,7 +22,7 @@ def get_hershey():
     """
         Parsing of a hershey table to generate numbers. This is only for internal purposes.
     """
-    hershey_path = pkg_resources.resource_filename('pymicrofluidics', '../data/hershey.txt')
+    hershey_path = pkg_resources.resource_filename('pymicrofluidics', 'data/hershey.txt')
     hershey_table = {}
     first = True
     with open(hershey_path) as openfileobject:
@@ -204,7 +204,7 @@ class Design:
                 polyline.append_vertices(-y)
     
         
-    def draw_design(self):
+    def draw_design(self, dxfversion=None):
         """
         Adds all features of the deisgn into the drawing
 
@@ -213,22 +213,18 @@ class Design:
 
         Parameters
         ----------
-        design : dictionary 
-            dictionary whose entries are features
-        drawing : dxfwrite object
-            dxfwrite object openend unsing drawing()  method
-
-        Returns
-        -------
-        dxfwrite object
-            Same drawing as input but with new feature added
+        dxfversion : str 
+            dxf version to be used (see ezdxf documentation)
 
         """
 
         if self.file == None:
             raise Exception("No file name given. Use design.file to set name.")
             
-        self.drawing = ezdxf.new(dxfversion="R2010")
+        if dxfversion is None:
+            self.drawing = ezdxf.new()
+        else:
+            self.drawing = ezdxf.new(dxfversion=dxfversion)
         self.msp = self.drawing.modelspace()
         
         for x in self.layers:

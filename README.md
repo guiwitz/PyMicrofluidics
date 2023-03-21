@@ -85,8 +85,6 @@ design.file = './example.dxf'
 design.draw_design()
 
 #save in GDS format. Only works if gdstk is installed (see above)
-design.draw_gds('./example_gds.gds')
+design.draw_gds()
 
-#close the drawing
-design.close()
 ```

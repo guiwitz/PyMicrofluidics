@@ -958,14 +958,14 @@ class Feature:
             num_np = [x for x in range(num) if np.mod(x, subsampling)==0]
         else:
             num_np = [x for x in range(num) if np.mod(x, subsampling)!=0]
-        num_poly = np.arange(0, len(polygon.coord))
 
         # create arrays with combinations of objects and series positions 
         m1, m2 = np.meshgrid(n_series_np, num_np, indexing='ij')
 
         # compute all x locations
         all_coords = np.ravel(origin[0] + m2*space+m1*(space*num+space_series))
-
+        num_obj_after_sampling = len(all_coords)
+        
         # combine x with y locations
         all_coords = np.stack([all_coords, origin[1]*np.ones_like(all_coords)])
 
@@ -983,7 +983,7 @@ class Feature:
         commplete_reshaped = np.reshape(complete, (complete.shape[0]*complete.shape[1], 2))
 
         # split into correct polygon lists
-        split_pos=np.cumsum(num * n_series * poly_len)
+        split_pos=np.cumsum(num_obj_after_sampling * poly_len)
         pg_array = np.split(commplete_reshaped, split_pos[:-1])
 
         pg_array_obj = cls()

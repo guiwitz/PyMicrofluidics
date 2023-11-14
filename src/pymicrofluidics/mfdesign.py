@@ -866,7 +866,7 @@ class Feature:
 
 
     @classmethod
-    def channel_array(cls, length, num, space, space_series, widths, origin, subsampling=1):
+    def channel_array(cls, length, num, space, space_series, widths, origin, subsampling=[1]):
         """
         Generates a channel array feature
 
@@ -899,14 +899,21 @@ class Feature:
             List of 2d numpy arrays specifying the position of each channel
 
         """
-        if (subsampling == 0) or (subsampling == -1):
-            raise ValueError('Subsampling cannot be 0 or -1')
+        if not hasattr(subsampling, "__len__"):
+            subsampling = [subsampling]
+        
+        for i, e in enumerate(subsampling):
+            if (e == 0) or (e == -1):
+                raise ValueError('Subsampling cannot be 0 or -1')
             
         ch_array = [np.zeros((4,2)) for x in range(num*len(widths))]
         count = 0
         for i in range(len(widths)):
             for j in range(num):
-                if ((subsampling>0) and (np.mod(j,subsampling) ==0)) or ((subsampling<0) and (np.mod(j,-subsampling) != 0)):
+                keep = 1
+                for _, e in enumerate(subsampling):
+                    keep = ( keep and ( (e>0 and np.mod(j,e)==0) or (e<0 and np.mod(j,-e)!=0) ) )
+                if keep:
                     xpos = origin[0]+j*space+i*(space*num+space_series)
                     points = [[xpos,origin[1]],[xpos, origin[1]-length]]
                     ch_array[count] = Feature.define_tube(points,[0,0],widths[i]/2).coord[0]                    
@@ -1492,7 +1499,7 @@ class Feature:
     def inline_filter(cls, position, pore_size, pore_number, filter_size, funnel_width, funnel_tip, rad, before=0, after=0, pore_dist=None):
 
         """
-        Creates a punching pad with filter.
+        Creates a filter.
 
         The filter region is composed of arrays of squares of different sizes. The size of 
         the filter region is set by the number and sizes of those arrays. The filter region is flanked on one side 
@@ -1858,6 +1865,10 @@ class Feature:
         """
         
         params = self.params
+        if len(params['subsampling']) > 1:
+            raise ValueError("Creates blocks within channels of a channel array is only possible with a single subsampling value.")
+        params['subsampling'] = params['subsampling'][0]
+
         count = 0
         for i in range(len(params['widths'])):
             if params['subsampling']>0:

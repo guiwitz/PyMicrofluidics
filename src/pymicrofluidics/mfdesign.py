@@ -1915,7 +1915,7 @@ class Feature:
         self.coord = new_feature.coord'''
         return self
     
-    def feature_buffering(self, name, buffer_size, single_sided_arg=True, sign=-1, inplace=False):
+    def feature_buffering(self, buffer_size, single_sided_arg=True, sign=-1, inplace=False):
 
         #original_feature = self.features[name]
         origin_coord = self.coord[0]

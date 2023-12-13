@@ -1915,6 +1915,30 @@ class Feature:
         self.coord = new_feature.coord'''
         return self
     
+    def feature_buffering(self, name, buffer_size, single_sided_arg=True, sign=-1, inplace=False):
+
+        #original_feature = self.features[name]
+        origin_coord = self.coord[0]
+        line_feature = LineString(origin_coord)
+        
+        dilated_feature=line_feature.buffer(sign*buffer_size, single_sided=single_sided_arg)
+        
+        xx, yy = dilated_feature.exterior.coords.xy
+        x = xx.tolist()
+        y = yy.tolist()
+        dilated_coord = [[element[0], element[1]] for element in zip(x, y)]
+        for ele in origin_coord:
+            while True:
+                try:
+                    dilated_coord.remove(ele)
+                except ValueError:
+                    break
+        if inplace:
+            self.coord[0] = dilated_coord
+        else:
+            return dilated_coord  
+    
+    
     
 def has_hole(feature):
     """
@@ -1938,25 +1962,3 @@ def has_hole(feature):
     return num_holes
 
 
-def feature_buffering(self, name, buffer_size, single_sided_arg=True, sign=-1, inplace=False):
-
-    #original_feature = self.features[name]
-    origin_coord = self.coord[0]
-    line_feature = LineString(origin_coord)
-    
-    dilated_feature=line_feature.buffer(sign*buffer_size, single_sided=single_sided_arg)
-    
-    xx, yy = dilated_feature.exterior.coords.xy
-    x = xx.tolist()
-    y = yy.tolist()
-    dilated_coord = [[element[0], element[1]] for element in zip(x, y)]
-    for ele in origin_coord:
-        while True:
-            try:
-                dilated_coord.remove(ele)
-            except ValueError:
-                break
-    if inplace:
-        self.coord[0] = dilated_coord
-    else:
-        return dilated_coord  

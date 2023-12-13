@@ -267,7 +267,7 @@ class Design:
         filename = Path(self.file).with_suffix('.gds')
         lib.write_gds(filename)        
     
-    def feature_buffering(self, name, buffer_size, single_sided_arg=True, sign=-1, inplace=False):
+    def feature_buffering(self, name, buffer_size, layer_name, layer, single_sided_arg=True, sign=-1, inplace=False):
     
         original_feature = self.features[name]
         origin_coord = original_feature.coord[0]
@@ -287,6 +287,7 @@ class Design:
                     break
         if inplace:
             self.feature[name].coord[0] = dilated_coord
+            self.layers[layer_name] = layer
         else:
             return dilated_coord  
     

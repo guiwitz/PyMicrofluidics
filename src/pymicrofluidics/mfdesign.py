@@ -49,9 +49,7 @@ def get_hershey():
     return hershey_table
 
 class Design:
-    def hello(name):
-        print("Hello ", name)
-    
+
     def __init__(self):
         
         self.features = {}
@@ -1940,6 +1938,9 @@ def has_hole(feature):
         num_holes = np.sum([len(x.interiors) for x in feature.geoms])
     return num_holes
 
-
+    
+def hello(name):
+    print("Hello ", name)
+    
 
 

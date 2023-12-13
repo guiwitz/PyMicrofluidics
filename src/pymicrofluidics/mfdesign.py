@@ -17,6 +17,8 @@ import pkg_resources
 #import scipy.interpolate
 #from scipy.interpolate import CubicSpline
 
+def hello(name):
+    print("Hello ", name)
 
 def get_hershey():
     """

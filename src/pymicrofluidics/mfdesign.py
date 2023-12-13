@@ -17,9 +17,6 @@ import pkg_resources
 #import scipy.interpolate
 #from scipy.interpolate import CubicSpline
 
-def hello(name):
-    print("Hello ", name)
-
 def get_hershey():
     """
         Parsing of a hershey table to generate numbers. This is only for internal purposes.
@@ -52,6 +49,8 @@ def get_hershey():
     return hershey_table
 
 class Design:
+    def hello(name):
+        print("Hello ", name)
     
     def __init__(self):
         

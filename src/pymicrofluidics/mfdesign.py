@@ -289,6 +289,7 @@ class Design:
             self.feature[name].coord[0] = dilated_coord
         else:
             return dilated_coord
+        print(self.feature[name].coord[0])
         
     def hello(name):
         print("Hello ", name)      

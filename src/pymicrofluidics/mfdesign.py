@@ -266,7 +266,29 @@ class Design:
             raise Exception("No file name given. Use design.file to set name.")
         filename = Path(self.file).with_suffix('.gds')
         lib.write_gds(filename)        
-        
+    
+def feature_buffering(self, name, buffer_size, single_sided_arg=True, sign=-1, inplace=False):
+    
+    original_feature = self.features[name]
+    origin_coord = original_feature.coord[0]
+    line_feature = LineString(origin_coord)
+    
+    dilated_feature=line_feature.buffer(sign*buffer_size, single_sided=single_sided_arg)
+    
+    xx, yy = dilated_feature.exterior.coords.xy
+    x = xx.tolist()
+    y = yy.tolist()
+    dilated_coord = [[element[0], element[1]] for element in zip(x, y)]
+    for ele in origin_coord:
+        while True:
+            try:
+                dilated_coord.remove(ele)
+            except ValueError:
+                break
+    if inplace:
+        self.feature[name].coord[0] = dilated_coord
+    else:
+        return dilated_coord        
     
     
 class Feature:
@@ -1937,30 +1959,4 @@ def has_hole(feature):
     elif feature.geom_type == 'MultiPolygon':
         num_holes = np.sum([len(x.interiors) for x in feature.geoms])
     return num_holes
-
-    
-def feature_buffering(self, name, buffer_size, single_sided_arg=True, sign=-1, inplace=False):
-    
-    original_feature = self.features[name]
-    origin_coord = original_feature.coord[0]
-    line_feature = LineString(origin_coord)
-    
-    dilated_feature=line_feature.buffer(sign*buffer_size, single_sided=single_sided_arg)
-    
-    xx, yy = dilated_feature.exterior.coords.xy
-    x = xx.tolist()
-    y = yy.tolist()
-    dilated_coord = [[element[0], element[1]] for element in zip(x, y)]
-    for ele in origin_coord:
-        while True:
-            try:
-                dilated_coord.remove(ele)
-            except ValueError:
-                break
-    if inplace:
-        self.feature[name].coord[0] = dilated_coord
-    else:
-        return dilated_coord
-    
-
 

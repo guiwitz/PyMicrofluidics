@@ -1920,7 +1920,7 @@ class Feature:
         #original_feature = self.features[name]
         for i in range(len(self.coord)):
             origin_coord = self.coord[i]
-            line_feature = LineString(origin_coord)
+            line_feature = Polygon(origin_coord)
             
             dilated_feature=line_feature.buffer(sign*buffer_size, single_sided=single_sided_arg)
             

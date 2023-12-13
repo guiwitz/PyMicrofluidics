@@ -1937,6 +1937,7 @@ class Feature:
             self.coord[0] = dilated_coord
         else:
             return dilated_coord  
+        return self
     
     
     

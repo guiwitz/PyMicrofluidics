@@ -288,11 +288,7 @@ class Design:
         if inplace:
             self.feature[name].coord[0] = dilated_coord
         else:
-            return dilated_coord
-        print(self.feature[name].coord[0])
-        
-    def hello(name):
-        print("Hello ", name)      
+            return dilated_coord  
     
     
 class Feature:

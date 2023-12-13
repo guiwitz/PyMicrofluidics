@@ -269,8 +269,8 @@ class Design:
     
     def feature_buffering(self, name, buffer_size, single_sided_arg=True, sign=-1, inplace=False):
     
-        original_feature = self.features[name]
-        origin_coord = original_feature.coord[0]
+        #original_feature = self.features[name]
+        origin_coord = self.coord[0]
         line_feature = LineString(origin_coord)
         
         dilated_feature=line_feature.buffer(sign*buffer_size, single_sided=single_sided_arg)
@@ -286,7 +286,7 @@ class Design:
                 except ValueError:
                     break
         if inplace:
-            self.feature[name].coord[0] = dilated_coord
+            self.coord[0] = dilated_coord
         else:
             return dilated_coord  
     

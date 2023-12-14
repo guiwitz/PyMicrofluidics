@@ -1915,12 +1915,13 @@ class Feature:
         self.coord = new_feature.coord'''
         return self
     
-    def feature_buffering(self, buffer_size, single_sided_arg=True, sign=-1, inplace=False):
+    def feature_buffering(self, buffer_size, single_sided_arg=True, sign=-1, inplace=True):
 
-        #original_feature = self.features[name]
-        for i in range(len(self.coord)):
-            origin_coord = self.coord[i]
+        for i, feature_in_array in enumerate(self.coord):
+            origin_coord = feature_in_array
             line_feature = Polygon(origin_coord)
+            
+            print(i)
             
             dilated_feature=line_feature.buffer(sign*buffer_size, single_sided=single_sided_arg)
             
@@ -1935,10 +1936,9 @@ class Feature:
                     except ValueError:
                         break
             if inplace:
-                self.coord[i] = dilated_coord
+                feature_in_array = dilated_coord
             else:
                 return dilated_coord  
-        #return self
     
     
     

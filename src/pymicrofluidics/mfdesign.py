@@ -1854,6 +1854,8 @@ class Feature:
             height of the block
         block_from_bottom: float
             distance of the block from the bottom of the channel
+        latplace : boolean
+            True apply the block only on one side (unilateral constriction), False applies the block on both sides
 
         Returns
         -------
@@ -1935,7 +1937,7 @@ class Feature:
         sign : float
             sign of the buffer (-1 or 1)
         inplace : boolean
-            TRue apply the buffering, False do not apply the buffering but return the new feature coordinates
+            True apply the buffering, False do not apply the buffering but return the new feature coordinates
 
         Returns
         -------

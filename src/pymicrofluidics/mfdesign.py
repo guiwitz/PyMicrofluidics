@@ -1839,7 +1839,7 @@ class Feature:
         topoinvert_obj.coord = back
         return topoinvert_obj
     
-    def channel_array_blocks(self, opening_width, block_len, block_from_bottom):
+    def channel_array_blocks(self, opening_width, block_len, block_from_bottom, latplace=True):
         """
         Creates blocks within channels of a channel array.
 
@@ -1876,9 +1876,13 @@ class Feature:
                 back_square = back_square-np.repeat([[params['space'],0]],[back_square.shape[0]],axis = 0)
                 
             center_x = 0.5*(np.min(back_square[:,0])+np.max(back_square[:,0]))
-            center_y = np.min(back_square[:,1])                     
-            block = Feature.define_polygon([[center_x-params['widths'][i]/2+opening_width,center_y+block_from_bottom],[center_x+params['widths'][i]/2-opening_width,center_y+block_from_bottom],
-                [center_x+params['widths'][i]/2-opening_width,center_y+block_from_bottom+block_len],[center_x-params['widths'][i]/2+opening_width, center_y+block_from_bottom+block_len]])
+            center_y = np.min(back_square[:,1])
+            if latplace:
+                block = Feature.define_polygon([[center_x-params['widths'][i]/2+opening_width,center_y+block_from_bottom],[center_x+params['widths'][i]/2+opening_width,center_y+block_from_bottom],
+                                                [center_x+params['widths'][i]/2+opening_width,center_y+block_from_bottom+block_len],[center_x-params['widths'][i]/2+opening_width, center_y+block_from_bottom+block_len]])
+            else:
+                block = Feature.define_polygon([[center_x-params['widths'][i]/2+opening_width,center_y+block_from_bottom],[center_x+params['widths'][i]/2-opening_width,center_y+block_from_bottom],
+                                                [center_x+params['widths'][i]/2-opening_width,center_y+block_from_bottom+block_len],[center_x-params['widths'][i]/2+opening_width, center_y+block_from_bottom+block_len]])
                                    
             temp = Feature.reverse_feature(block, back_square)
             for j in range(params['num']):

@@ -17,7 +17,6 @@ import pkg_resources
 #import scipy.interpolate
 #from scipy.interpolate import CubicSpline
 
-
 def get_hershey():
     """
         Parsing of a hershey table to generate numbers. This is only for internal purposes.
@@ -50,7 +49,7 @@ def get_hershey():
     return hershey_table
 
 class Design:
-    
+
     def __init__(self):
         
         self.features = {}
@@ -267,7 +266,6 @@ class Design:
             raise Exception("No file name given. Use design.file to set name.")
         filename = Path(self.file).with_suffix('.gds')
         lib.write_gds(filename)        
-        
     
     
 class Feature:
@@ -1917,6 +1915,54 @@ class Feature:
         self.coord = new_feature.coord'''
         return self
     
+    def feature_buffering(self, buffer_size, single_sided_arg=True, sign=-1, inplace=True):
+        """
+        Increases the feature dimensions with shapely.buffer (for chemical etching)
+
+
+        Parameters
+        ----------
+        self : feature
+            feature to be modfied
+        buffer_size : float
+            buffer increase size
+        single_sided_arg : boolean
+            True apply buffer only on one side, False apply buffer on both sides of the feature
+        sign : float
+            sign of the buffer (-1 or 1)
+        inplace : boolean
+            TRue apply the buffering, False do not apply the buffering but return the new feature coordinates
+
+        Returns
+        -------
+        feature
+            modified coordinates of buffered feature
+
+        """
+        for i, feature_in_array in enumerate(self.coord): #take the coordinates of each (array) feature
+            origin_coord = feature_in_array #define as original coordinates
+            polygon_feature = Polygon(origin_coord) #create a polygon with the original coordinates
+              
+            dilated_feature=polygon_feature.buffer(sign*buffer_size, single_sided=single_sided_arg) #dilate the polygon with buffer and the defined variables
+            #extract the coordinates of the dilated polygon
+            xx, yy = dilated_feature.exterior.coords.xy
+            x = xx.tolist()
+            y = yy.tolist()
+            dilated_coord = [[element[0], element[1]] for element in zip(x, y)]
+            #for each coordinate in the dilated polygon, remove the coordinates from the original polygon
+            #if inplace=True update the feature coordinates for the dilated ones
+            for ele in origin_coord:
+                while True:
+                    try:
+                        dilated_coord.remove(ele)
+                    except ValueError:
+                        break
+            if inplace:
+                self.coord[i] = np.array(dilated_coord)
+            else:
+                return dilated_coord  
+    
+    
     
 def has_hole(feature):
     """
@@ -1938,7 +1984,5 @@ def has_hole(feature):
     elif feature.geom_type == 'MultiPolygon':
         num_holes = np.sum([len(x.interiors) for x in feature.geoms])
     return num_holes
-
-
 
 
